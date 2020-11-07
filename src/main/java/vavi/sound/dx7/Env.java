@@ -19,20 +19,20 @@ package vavi.sound.dx7;
 
 class Env {
 
-    int[] rates_ = new int[4];
-    int[] levels_ = new int[4];
-    int outlevel_;
-    int rate_scaling_;
+    private int[] rates_ = new int[4];
+    private int[] levels_ = new int[4];
+    private int outlevel_;
+    private int rate_scaling_;
     // Level is stored so that 2^24 is one doubling, ie 16 more bits than
     // the DX7 itself (fraction is stored in level rather than separate
     // counter)
-    int level_;
-    int targetlevel_;
-    boolean rising_;
-    int ix_;
-    int inc_;
+    private int level_;
+    private int targetlevel_;
+    private boolean rising_;
+    private int ix_;
+    private int inc_;
 
-    boolean down_;
+    private boolean down_;
 
     Env(final int[] r, final int[] l, int ol, int rate_scaling) {
         for (int i = 0; i < 4; i++) {
@@ -88,11 +88,11 @@ class Env {
         // Unknown parameter, ignore for now
     }
 
-    static final int levellut[] = {
+    private static final int levellut[] = {
         0, 5, 9, 13, 17, 20, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 42, 43, 45, 46
     };
 
-    static int scaleoutlevel(int outlevel) {
+    public static int scaleoutlevel(int outlevel) {
         return outlevel >= 20 ? 28 + outlevel : levellut[outlevel];
     }
 

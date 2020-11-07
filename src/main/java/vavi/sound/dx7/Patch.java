@@ -19,8 +19,12 @@ package vavi.sound.dx7;
 import vavi.util.Debug;
 
 
+/**
+ * @see "https://github.com/asb2m10/dexed/blob/master/Documentation/sysex-format.txt"
+ */
 class Patch {
-    static void unpackPatch(final byte[] bulk, byte[] patch) {
+
+    public static void unpackPatch(final byte[] bulk, byte[] patch) {
         for (int op = 0; op < 6; op++) {
             // eg rate and level, brk pt, depth, scaling
             System.arraycopy(bulk, op * 17, patch, op * 21, 11);
@@ -55,11 +59,11 @@ class Patch {
         checkPatch(patch);
     }
 
-    static int clamped = 0; // not thread safe
+    private static int clamped = 0; // not thread safe
 
-    static int file_clamped = 0; // not thread safe
+    private static int file_clamped = 0; // not thread safe
 
-    static byte clamp(byte byte_, int pos, byte max) {
+    private static byte clamp(byte byte_, int pos, byte max) {
         if (byte_ > max || byte_ < 0) {
             clamped++;
             Debug.printf("file %d clamped %d pos %d was %d is %d\n", file_clamped, clamped, pos, byte_, max);
@@ -72,7 +76,7 @@ class Patch {
     // http://homepages.abdn.ac.uk/d.j.benson/dx7/sysex-format.txt
     // Note, 1% of my downloaded voices go well outside these ranges.
     // a TODO is check what happens when we slightly go outside
-    static final byte[] max = {
+    private static final byte[] max = {
         99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, // osc6
         3, 3, 7, 3, 7, 99, 1, 31, 99, 14, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, // osc5
         3, 3, 7, 3, 7, 99, 1, 31, 99, 14, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, // osc4
@@ -86,7 +90,7 @@ class Patch {
         126, 126, 126, 126, 126, 126, 126, 126, 126, 126 // name
     };
 
-    static void checkPatch(byte[] patch) {
+    private static void checkPatch(byte[] patch) {
         for (int i = 0; i < 155; i++) {
             patch[i] = clamp(patch[i], i, max[i]);
         }

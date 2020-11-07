@@ -19,7 +19,7 @@ package vavi.sound.dx7;
 
 class FmOpKernel {
 
-    static void compute(int[] output, final int[] input, int phase0, int freq, int gain1, int gain2, boolean add) {
+    public static void compute(int[] output, final int[] input, int phase0, int freq, int gain1, int gain2, boolean add) {
         int dgain = (gain2 - gain1 + (Note.N >> 1)) >> Note.LG_N;
         int gain = gain1;
         int phase = phase0;
@@ -40,7 +40,7 @@ class FmOpKernel {
         }
     }
 
-    static void compute_pure(int[] output, int phase0, int freq, int gain1, int gain2, boolean add) {
+    public static void compute_pure(int[] output, int phase0, int freq, int gain1, int gain2, boolean add) {
         int dgain = (gain2 - gain1 + (Note.N >> 1)) >> Note.LG_N;
         int gain = gain1;
         int phase = phase0;
@@ -61,7 +61,7 @@ class FmOpKernel {
         }
     }
 
-    static void compute_fb(int[] output, int phase0, int freq, int gain1, int gain2, int[] fb_buf, int fb_shift, boolean add) {
+    public static void compute_fb(int[] output, int phase0, int freq, int gain1, int gain2, int[] fb_buf, int fb_shift, boolean add) {
         int dgain = (gain2 - gain1 + (Note.N >> 1)) >> Note.LG_N;
         int gain = gain1;
         int phase = phase0;

@@ -13,7 +13,9 @@ import java.util.concurrent.CountDownLatch;
 
 import javax.sound.midi.MetaEventListener;
 import javax.sound.midi.MetaMessage;
+import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiSystem;
+import javax.sound.midi.Receiver;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
 import javax.sound.midi.Synthesizer;
@@ -23,34 +25,46 @@ import javax.sound.sampled.DataLine;
 import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.SourceDataLine;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import com.sun.media.sound.ModelAbstractOscillator;
+
+import vavi.sound.midi.dx7.Dx7Oscillator;
 import vavi.sound.midi.dx7.Dx7Synthesizer;
 import vavi.util.Debug;
 import vavi.util.StringUtil;
 
 
 /**
- * Test7.
+ * Dx7SynthesizerTest.
  *
  * @author <a href="mailto:umjammer@gmail.com">Naohide Sano</a> (umjammer)
  * @version 0.00 2020/10/30 umjammer initial version <br>
  */
-public class Test7 {
+@SuppressWarnings("restriction")
+public class Dx7SynthesizerTest {
+
+    static {
+        System.setProperty("javax.sound.midi.Synthesizer", "#Gervill");
+        System.setProperty("javax.sound.midi.Sequencer", "#Real Time Sequencer");
+    }
 
     @Test
+    @Disabled
     void test() throws Exception {
         Synthesizer synthesizer = new Dx7Synthesizer();
         synthesizer.open();
-Debug.println("synthesizer: " + synthesizer);
+Debug.println("synthesizer: " + synthesizer.getClass().getName());
 
         Sequencer sequencer = MidiSystem.getSequencer(false);
         sequencer.getTransmitter().setReceiver(synthesizer.getReceiver());
         sequencer.open();
-Debug.println("sequencer: " + sequencer);
+Debug.println("sequencer: " + sequencer.getClass().getName());
 
+        String filename = "../../src/sano-n/vavi-apps-dx7/tmp/midi/minute_waltz.mid";
 //        String filename = "1/title-screen.mid";
-        String filename = "1/overworld.mid";
+//        String filename = "1/overworld.mid";
 //        String filename = "1/m0057_01.mid";
 //        String filename = "1/ac4br_gm.MID";
         File file = new File(System.getProperty("user.home"), "/Music/midi/" + filename);
@@ -77,12 +91,92 @@ System.err.println("END");
         synthesizer.close();
     }
 
+    @Test
+    @Disabled
+    void test2() throws Exception {
+        Synthesizer synthesizer = new Dx7Synthesizer();
+        synthesizer.open();
+Debug.println("synthesizer: " + synthesizer);
+
+        MidiChannel channel = synthesizer.getChannels()[0];
+        for (int i = 0; i < 32; i++) {
+            channel.programChange(1 + i);
+            channel.noteOn(63 + i, 127);
+            Thread.sleep(100);
+            channel.noteOff(63 + i);
+        }
+
+        Thread.sleep(3000);
+
+        synthesizer.close();
+    }
+
+    @Test
+    @Disabled
+    void test4() throws Exception {
+        ModelAbstractOscillator oscs;
+        try {
+            oscs = Dx7Oscillator.class.newInstance();
+        } catch (InstantiationException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IllegalAccessException e) {
+            throw new IllegalArgumentException(e);
+        }
+        oscs.setSampleRate(44100);
+        oscs.init();
+    }
+
+    @Test
+    void test3() throws Exception {
+        Synthesizer synthesizer = MidiSystem.getSynthesizer();
+Debug.println("synthesizer: " + synthesizer.getClass().getName());
+        synthesizer.open();
+        synthesizer.unloadAllInstruments(synthesizer.getDefaultSoundbank());
+        synthesizer.loadAllInstruments(new Dx7Oscillator());
+
+        String filename = "../../src/sano-n/vavi-apps-dx7/tmp/midi/minute_waltz.mid";
+//        String filename = "1/title-screen.mid";
+//        String filename = "1/overworld.mid";
+//        String filename = "1/m0057_01.mid";
+//        String filename = "1/ac4br_gm.MID";
+        File file = new File(System.getProperty("user.home"), "/Music/midi/" + filename);
+        Sequence seq = MidiSystem.getSequence(file);
+
+        Sequencer sequencer = MidiSystem.getSequencer(false);
+Debug.println("sequencer: " + sequencer.getClass().getName());
+        sequencer.open();
+        Receiver receiver = synthesizer.getReceiver();
+        sequencer.getTransmitter().setReceiver(receiver);
+
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        MetaEventListener mel = new MetaEventListener() {
+            public void meta(MetaMessage meta) {
+System.err.println("META: " + meta.getType());
+                if (meta.getType() == 47) {
+                    countDownLatch.countDown();
+                }
+            }
+        };
+        sequencer.setSequence(seq);
+        sequencer.addMetaEventListener(mel);
+System.err.println("START");
+        sequencer.start();
+
+        countDownLatch.await();
+System.err.println("END");
+        sequencer.removeMetaEventListener(mel);
+
+        sequencer.stop();
+        sequencer.close();
+        synthesizer.close();
+    }
+
     /**
      *
      * @param args
      */
     public static void main(String[] args) throws Exception {
-        final int n_samples = 20 * 1024;
+        final int n_samples = 10 * 1024;
         double sample_rate = 44100.0;
         Freqlut.init(sample_rate);
         PitchEnv.init(sample_rate);
@@ -93,7 +187,7 @@ System.err.println("END");
 //Debug.println("patchs: " + voices.length);
 //        byte[] b1 = voices[k].allToByte();
 
-        DataInputStream dis = new DataInputStream(Test7.class.getResourceAsStream("/unpacked.bin"));
+        DataInputStream dis = new DataInputStream(Dx7SynthesizerTest.class.getResourceAsStream("/unpacked.bin"));
         int n = dis.available() / 156;
 Debug.println("patchs: " + n);
         byte[][] b = new byte[n][156];
@@ -114,27 +208,46 @@ gainControl.setValue(dB);
         line.start();
 
         Random r = new Random();
-for (int m = 0; m < 100; m++) {
+for (int m = 0; m < 20; m++) {
 //        byte[] x = b1;
-        k = r.nextInt(n);
+//        k = r.nextInt(n);
+        k = 3;
 
         byte[] x = b[k];
-Debug.println("patch: " + k);
+Debug.println("patch: " + k / 32 + ", " + k % 32);
 Debug.println(x.length + "\n" + StringUtil.getDump(x));
 
-        Note note = new Note(x, 50 + (k % 12), 100);
+        Lfo.init(audioFormat.getSampleRate());
+
+        Lfo lfo = new Lfo();
+        ResoFilter filter = new ResoFilter();
+        int[] filterControl = new int[3];
+        filterControl[0] = 258847126;
+        filterControl[1] = 0;
+        filterControl[2] = 0;
+
+        lfo.keydown();
+        Note note = new Note(x, 50 + (r.nextInt(12)), 100);
         Note.Controllers controllers = new Note.Controllers(0x2000);
         int[] buf = new int[Note.N];
+        int[] buf2 = new int[Note.N];
 
         for (int i = 0; i < n_samples; i += Note.N) {
             if (i >= n_samples * (7. / 8.)) {
                 note.keyup();
             }
-            note.compute(buf, 0, 0, controllers);
+            int lfoValue = lfo.getsample();
+            int lfoDelay = lfo.getdelay();
+            note.compute(buf, lfoValue, lfoDelay, controllers);
+//            note.compute(buf, 0, 0, controllers);
+            final int[][] bufs = { buf };
+            int[][] bufs2 = { buf2 };
+            filter.process(bufs, filterControl, filterControl, bufs2);
             for (int j = 0; j < Note.N; j++) {
-                buf[j] >>= 2;
+                buf2[j] >>= 2;
+//                buf[j] >>= 2;
             }
-            write_data(line, buf, Note.N);
+            write_data(line, buf2, Note.N);
         }
 }
         line.drain();

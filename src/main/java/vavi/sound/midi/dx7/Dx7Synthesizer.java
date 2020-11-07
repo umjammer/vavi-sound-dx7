@@ -9,10 +9,10 @@ package vavi.sound.midi.dx7;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.sound.midi.Instrument;
 import javax.sound.midi.MetaMessage;
@@ -34,22 +34,26 @@ import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
-import vavi.sound.dx7.Note;
 import vavi.sound.dx7.SynthUnit;
-import vavi.sound.midi.dx7.Dx7SoundBank.Dx7Instrument;
+import vavi.sound.midi.dx7.Dx7Soundbank.Dx7Instrument;
 import vavi.util.Debug;
 import vavi.util.StringUtil;
 
 
 /**
- * MochaSynthesizer.
+ * Dx7Synthesizer.
+ *
+ * creating a synthesizer is too much for us. we need to reproduce
+ * time management, multi voice management, mix down polyphony etc.
+ * Gervill provides well considered sound system. what we need to do
+ * is just to create a oscillator. see {@link Dx7Oscillator}.
+ *
+ * TODO delegate default synthesizer
  *
  * @author <a href="mailto:umjammer@gmail.com">Naohide Sano</a> (umjammer)
  * @version 0.00 2020/10/31 umjammer initial version <br>
  */
 public class Dx7Synthesizer implements Synthesizer {
-
-    private static Logger logger = Logger.getLogger(Dx7Synthesizer.class.getName());
 
     private static final String version = "0.0.1.";
 
@@ -61,13 +65,11 @@ public class Dx7Synthesizer implements Synthesizer {
                             "Version " + version) {};
 
     // TODO != channel???
-    private static final int MAX_CHANNEL = 1;
+    private static final int MAX_CHANNEL = 16;
 
     private Dx7MidiChannel[] channels = new Dx7MidiChannel[MAX_CHANNEL];
 
     private VoiceStatus[] voiceStatus = new VoiceStatus[MAX_CHANNEL];
-
-    private long timestump;
 
     private boolean isOpen;
 
@@ -75,7 +77,7 @@ public class Dx7Synthesizer implements Synthesizer {
 
     // ----
 
-    private Dx7SoundBank soundBank;
+    private Dx7Soundbank soundBank;
 
     /** */
     private Dx7Instrument[] instruments;
@@ -87,6 +89,8 @@ public class Dx7Synthesizer implements Synthesizer {
     }
 
     private SynthUnit synthUnit;
+
+    BlockingDeque<Integer> deque = new LinkedBlockingDeque<>();
 
     // ----
 
@@ -108,7 +112,7 @@ Debug.println("already open: " + hashCode());
             voiceStatus[i].channel = i;
         }
 
-        soundBank = new Dx7SoundBank();
+        soundBank = new Dx7Soundbank();
         instruments = new Dx7Instrument[128];
         for (int i = 0; i < 128; ++i) {
             instruments[i] = (Dx7Instrument) soundBank.getInstruments()[i];
@@ -130,7 +134,7 @@ Debug.println("already open: " + hashCode());
     /** */
     private void init() throws MidiUnavailableException {
         try {
-            synthUnit = new SynthUnit();
+            synthUnit = new SynthUnit(deque);
 
             //
             DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, audioFormat, AudioSystem.NOT_SPECIFIED);
@@ -143,37 +147,25 @@ Debug.println(line.getClass().getName());
         } catch (LineUnavailableException e) {
             throw (MidiUnavailableException) new MidiUnavailableException().initCause(e);
         }
-
-        timestump = 0;
     }
 
     /** */
     private void play() {
-        byte[] buf = new byte[4 * (int) audioFormat.getSampleRate() / 10];
-//Debug.printf("buf: %d", buf.length);
+        byte[] buf = new byte[(int) audioFormat.getSampleRate() * 2];
 
         while (isOpen) {
             try {
-                long msec = System.currentTimeMillis() - timestump;
-                timestump = System.currentTimeMillis();
-                msec = msec > 100 ? 100 : msec;
-                int len = (4 * (int) (audioFormat.getSampleRate() * msec / 1000.0)) / Note.N * Note.N;
-                read(buf, 0, len);
+                int len = Math.min(deque.size(), (int) audioFormat.getSampleRate());
+Debug.println("read: " + len);
+                for (int i = 0; i < len; i++) {
+                    int s = deque.take();
+                    buf[i * 2] = (byte) (s & 0xff);
+                    buf[i * 2 + 1] = (byte) ((s >> 8) & 0xff);
+                }
                 line.write(buf, 0, buf.length);
-                Thread.sleep(33); // TODO how to define?
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    /** */
-    private void read(byte[] buf, int ofs, int len) {
-        int[] b = new int[len / 2];
-        synthUnit.getSamples(b.length, b);
-        for (int i = 0; i < b.length; i++) {
-            buf[i * 2] = (byte) (b[i] & 0xff);
-            buf[i * 2 + 1] = (byte) ((b[i] >> 8) & 0xff);
         }
     }
 
@@ -183,6 +175,7 @@ Debug.println(line.getClass().getName());
         line.drain();
         line.close();
         executor.shutdown();
+        synthUnit.close();
     }
 
     @Override
@@ -192,7 +185,7 @@ Debug.println(line.getClass().getName());
 
     @Override
     public long getMicrosecondPosition() {
-        return timestump;
+        return -1;
     }
 
     @Override
@@ -227,7 +220,7 @@ Debug.println(line.getClass().getName());
 
     @Override
     public int getMaxPolyphony() {
-        return MAX_CHANNEL * 6; // TODO
+        return 16;
     }
 
     @Override
@@ -491,6 +484,10 @@ Debug.println(line.getClass().getName());
             if (message instanceof ShortMessage) {
                 ShortMessage shortMessage = (ShortMessage) message;
                 int channel = shortMessage.getChannel();
+                if (channel >= MAX_CHANNEL) {
+Debug.printf("unhandled short, channel: %d\n", channel);
+                    return;
+                }
                 int command = shortMessage.getCommand();
                 int data1 = shortMessage.getData1();
                 int data2 = shortMessage.getData2();

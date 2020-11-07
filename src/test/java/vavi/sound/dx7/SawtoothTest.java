@@ -10,7 +10,6 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.FloatControl;
-import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
 import org.junit.jupiter.api.Test;
@@ -32,7 +31,6 @@ class SawtoothTest {
         final int n_samples = 400 * 1024;
 
         Sawtooth.init(sample_rate);
-        ResoFilter.init(sample_rate);
 
         Sawtooth s = new Sawtooth();
         int[] control_last = new int[1];
@@ -68,7 +66,7 @@ gainControl.setValue(dB);
         int[][] bufs2 = new int[1][];
         bufs[0] = buf;
         bufs2[0] = buf2;
-        int phase = 0;
+//        int phase = 0;
         for (int i = 0; i < n_samples; i += 64) {
 
             double f = ramp * (i + 64 + 1);
@@ -81,8 +79,8 @@ gainControl.setValue(dB);
             rf.process(bufs, fc, fc_last, bufs2);
             for (int j = 0; j < 64; j++) {
                 buf2[j] = buf[j] >> 1;
-                // phase += 100000;
-                // buf2[j] = (Sin::compute(phase) - (int)((1<< 24) * sin(phase * 2 * M_PI / (1 << 24)))) << 12;
+//                phase += 100000;
+//                buf2[j] = (Sin.compute(phase) - (int)((1<< 24) * sin(phase * 2 * M_PI / (1 << 24)))) << 12;
             }
             write_data(line, buf2, 64);
         }

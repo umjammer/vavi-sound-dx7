@@ -19,26 +19,26 @@ package vavi.sound.dx7;
 
 class FmCore {
 
-    static class FmOpParams {
+    public static class FmOpParams {
         int[] gain = new int[2];
         int freq;
         int phase;
     }
 
-    static class FmOperatorInfo {
+    public static class FmOperatorInfo {
         int in;
         int out;
     };
 
-    static final int OUT_BUS_ONE = 1 << 0;
-    static final int OUT_BUS_TWO = 1 << 1;
-    static final int OUT_BUS_ADD = 1 << 2;
-    static final int IN_BUS_ONE = 1 << 4;
-    static final int IN_BUS_TWO = 1 << 5;
-    static final int FB_IN = 1 << 6;
-    static final int FB_OUT = 1 << 7;
+    private static final int OUT_BUS_ONE = 1 << 0;
+    private static final int OUT_BUS_TWO = 1 << 1;
+    private static final int OUT_BUS_ADD = 1 << 2;
+    private static final int IN_BUS_ONE = 1 << 4;
+    private static final int IN_BUS_TWO = 1 << 5;
+    private static final int FB_IN = 1 << 6;
+    private static final int FB_OUT = 1 << 7;
 
-    static class FmAlgorithm {
+    private static class FmAlgorithm {
         int[] ops = new int[6];
         public FmAlgorithm(Integer... args) {
             int c = 0;
@@ -48,7 +48,7 @@ class FmCore {
         }
     }
 
-    static final FmAlgorithm[] algorithms = new FmAlgorithm[] {
+    private static final FmAlgorithm[] algorithms = new FmAlgorithm[] {
         new FmAlgorithm(0xc1, 0x11, 0x11, 0x14, 0x01, 0x14), // 1
         new FmAlgorithm(0x01, 0x11, 0x11, 0x14, 0xc1, 0x14), // 2
         new FmAlgorithm(0xc1, 0x11, 0x14, 0x01, 0x11, 0x14), // 3
@@ -83,7 +83,7 @@ class FmCore {
         new FmAlgorithm(0xc4, 0x04, 0x04, 0x04, 0x04, 0x04), // 32
     };
 
-    int n_out(final FmAlgorithm alg) {
+    private int n_out(final FmAlgorithm alg) {
         int count = 0;
         for (int i = 0; i < 6; i++) {
             if ((alg.ops[i] & 7) == OUT_BUS_ADD)

@@ -18,11 +18,11 @@ package vavi.sound.dx7;
 
 
 class Sin {
-    static final int SIN_LG_N_SAMPLES = 10;
-    static final int SIN_N_SAMPLES = 1 << SIN_LG_N_SAMPLES;
-    static final int R = 1 << 29;
+    private static final int SIN_LG_N_SAMPLES = 10;
+    private static final int SIN_N_SAMPLES = 1 << SIN_LG_N_SAMPLES;
+    private static final int R = 1 << 29;
 
-    static int[] sintab = new int[SIN_N_SAMPLES << 1];
+    private static int[] sintab = new int[SIN_N_SAMPLES << 1];
 
     static {
         double dphase = 2 * Math.PI / SIN_N_SAMPLES;
@@ -43,7 +43,7 @@ class Sin {
         sintab[(SIN_N_SAMPLES << 1) - 2] = -sintab[(SIN_N_SAMPLES << 1) - 1];
     }
 
-    static int lookup(int phase) {
+    public static int lookup(int phase) {
         final int SHIFT = 24 - SIN_LG_N_SAMPLES;
         int lowbits = phase & ((1 << SHIFT) - 1);
         int phase_int = (phase >> (SHIFT - 1)) & ((SIN_N_SAMPLES - 1) << 1);
@@ -54,13 +54,13 @@ class Sin {
     }
 
     // coefficients are Chebyshev polynomial, computed by compute_cos_poly.py
-    static final int C8_0 = 16777216;
-    static final int C8_2 = -331168742;
-    static final int C8_4 = 1089453524;
-    static final int C8_6 = -1430910663;
-    static final int C8_8 = 950108533;
+    private static final int C8_0 = 16777216;
+    private static final int C8_2 = -331168742;
+    private static final int C8_4 = 1089453524;
+    private static final int C8_6 = -1430910663;
+    private static final int C8_8 = 950108533;
 
-    static int compute(int phase) {
+    public static int compute(int phase) {
         int x = (phase & ((1 << 23) - 1)) - (1 << 22);
         int x2 = (int) (((long) x * (long) x) >> 16);
         int y = (int) (((((((((((((long) C8_8 * (long) x2) >> 32) + C8_6) * x2) >> 32) + C8_4) * x2) >> 32) + C8_2) *
@@ -70,14 +70,14 @@ class Sin {
         return y;
     }
 
-    static final int C10_0 = 1 << 30;
-    static final int C10_2 = -1324675874; // scaled * 4
-    static final int C10_4 = 1089501821;
-    static final int C10_6 = -1433689867;
-    static final int C10_8 = 1009356886;
-    static final int C10_10 = -421101352;
+    private static final int C10_0 = 1 << 30;
+    private static final int C10_2 = -1324675874; // scaled * 4
+    private static final int C10_4 = 1089501821;
+    private static final int C10_6 = -1433689867;
+    private static final int C10_8 = 1009356886;
+    private static final int C10_10 = -421101352;
 
-    static int compute10(int phase) {
+    public static int compute10(int phase) {
         int x = (phase & ((1 << 29) - 1)) - (1 << 28);
         int x2 = (int) (((long) x * (long) x) >> 26);
         int y = (int) ((((((((((((((((long) C10_10 * (long) x2) >> 34) + C10_8) * x2) >> 34) + C10_6) * x2) >> 34) + C10_4) *

@@ -1,12 +1,12 @@
 /*
  * Copyright 2012 Google Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,43 +14,43 @@
  * limitations under the License.
  */
 
-// Resonant filter implementation. This closely follows "Non-Linear
-// Digital Implementation of the Moog Ladder Filter" by Antti
-// Huovilainen, 2004.
-
-// The full implementation requires both a tuning table and 2x
-// oversampling, neither of which are present yet, but we'll get there. 
-
 package vavi.sound.dx7;
 
-import vavi.util.Debug;
 
+/**
+ * Resonant filter implementation. This closely follows "Non-Linear
+ * Digital Implementation of the Moog Ladder Filter" by Antti
+ * Huovilainen, 2004.
+ *
+ * The full implementation requires both a tuning table and 2x
+ * oversampling, neither of which are present yet, but we'll get there.
+ */
+public class ResoFilter {
 
-class ResoFilter {
-    static double this_sample_rate;
+//    private static double this_sample_rate;
 
-    static void init(double sample_rate) {
-        this_sample_rate = sample_rate;
-    }
+//    public static void init(double sample_rate) {
+//        this_sample_rate = sample_rate;
+//    }
 
-    int[] x = new int[4];
-    int[] w = new int[4];
-    int yy;
+    private int[] x = new int[4];
+    private int[] w = new int[4];
+    private int yy;
 
-    ResoFilter() {
+    public ResoFilter() {
         for (int i = 0; i < 4; i++) {
             x[i] = 0;
             w[i] = 0;
         }
     }
 
-    int compute_alpha(int logf) {
+    private static int compute_alpha(int logf) {
         return Math.min(1 << 24, Freqlut.lookup(logf));
     }
 
     // Some really generic 4x4 matrix multiplication operations, suitable
     // for NEON'ing
-    private void matmult4(float[] dst, int dP, final float[] a, int aP, final float[] b, int bP) {
+    private static void matmult4(float[] dst, int dP, final float[] a, int aP, final float[] b, int bP) {
         dst[dP + 0] = a[aP + 0] * b[bP + 0] + a[aP + 4] * b[bP + 1] + a[aP + 8] * b[bP + 2] + a[aP + 12] * b[bP + 3];
         dst[dP + 1] = a[aP + 1] * b[bP + 0] + a[aP + 5] * b[bP + 1] + a[aP + 9] * b[bP + 2] + a[aP + 13] * b[bP + 3];
         dst[dP + 2] = a[aP + 2] * b[bP + 0] + a[aP + 6] * b[bP + 1] + a[aP + 10] * b[bP + 2] + a[aP + 14] * b[bP + 3];
@@ -69,48 +69,43 @@ class ResoFilter {
         dst[dP + 15] = a[aP + 3] * b[bP + 12] + a[aP + 7] * b[bP + 13] + a[aP + 11] * b[bP + 14] + a[aP + 15] * b[bP + 15];
     }
 
-    private void matvec4(float[] dst, int dP, final float[] a, int aP, final float[] b, int bP) {
+    private static void matvec4(float[] dst, int dP, final float[] a, int aP, final float[] b, int bP) {
         dst[dP + 0] = a[aP + 0] * b[bP + 0] + a[aP + 4] * b[bP + 1] + a[aP + 8] * b[bP + 2] + a[aP + 12] * b[bP + 3];
         dst[dP + 1] = a[aP + 1] * b[bP + 0] + a[aP + 5] * b[bP + 1] + a[aP + 9] * b[bP + 2] + a[aP + 13] * b[bP + 3];
         dst[dP + 2] = a[aP + 2] * b[bP + 0] + a[aP + 6] * b[bP + 1] + a[aP + 10] * b[bP + 2] + a[aP + 14] * b[bP + 3];
         dst[dP + 3] = a[aP + 3] * b[bP + 0] + a[aP + 7] * b[bP + 1] + a[aP + 11] * b[bP + 2] + a[aP + 15] * b[bP + 3];
     }
 
-    private void vecupdate4(float[] dst, float x, final float[] a) {
+    private static void vecupdate4(float[] dst, float x, final float[] a) {
         for (int i = 0; i < 4; i++) {
             dst[i] += x * a[i];
         }
     }
 
     /* compute dst := dst + x * a */
-    private void matupdate4(float[] dst, int dP, float x, final float[] a, int aP) {
+    private static void matupdate4(float[] dst, int dP, float x, final float[] a, int aP) {
         for (int i = 0; i < 16; i++) {
             dst[i + dP] += x * a[i + aP];
         }
     }
 
-    private void matcopy(float[] dst, int dP, final float[] src, int sP, int n) {
-        System.arraycopy(src, sP, dst, dP, n);
-    }
-
-    void dump_matrix(final float[] a) {
+    private static void dump_matrix(final float[] a) {
         for (int row = 0; row < 5; row++) {
-            Debug.printf("%s[", row == 0 ? "[" : " ");
+            System.err.printf("%s[", row == 0 ? "[" : " ");
             for (int col = 0; col < 5; col++) {
                 float x = (float) (row == 0 ? (col == 0 ? 1.0 : 0.0) : a[col * 4 + (row - 1)]);
-                Debug.printf("%6f ", x);
+                System.err.printf("%6f ", x);
             }
-            Debug.printf("]%s\n", row == 4 ? "]" : "");
+            System.err.printf("]%s\n", row == 4 ? "]" : "");
         }
     }
 
-    private void make_state_transition(float[] result, int f0, int k) {
-        // TODO: these should depend on k, and be just enough to meet error
-        // bound
+    private static void make_state_transition(float[] result, int f0, int k) {
+        // TODO: these should depend on k, and be just enough to meet error bound
         int n1 = 4;
         int n2 = 4;
-        float f = (float) (f0 * (1.0 / (1 << (24 + n2))));
-        float k_f = (float) (k * (1.0 / (1 << 24)));
+        float f = f0 * (1.0f / (1 << (24 + n2)));
+        float k_f = k * (1.0f / (1 << 24));
         k_f = Math.min(k_f, 3.98f);
 
         // these are 5x5 matrices of which we store the bottom 5x4
@@ -137,7 +132,7 @@ class ResoFilter {
         a[19] = 1.0f;
 
         float[] c = new float[20];
-        matcopy(c, 0, j, 0, 20);
+        System.arraycopy(j, 0, c, 0, 20);
 
         final float[] scales = { 1.0f, 1 / 2.0f, 1 / 6.0f, 1 / 24.0f };
         // taylor's series to n1
@@ -149,7 +144,7 @@ class ResoFilter {
                 float[] tmp = new float[20];
                 matvec4(tmp, 0, c, 4, j, 0);
                 matmult4(tmp, 4, c, 4, j, 4);
-                matcopy(c, 0, tmp, 0, 20);
+                System.arraycopy(tmp, 0, c, 0, 20);
             }
         }
 
@@ -161,20 +156,20 @@ class ResoFilter {
             for (int l = 0; l < 4; l++) {
                 a[l] += tmp[l];
             }
-            matcopy(a, 4, tmp, 4, 16);
+            System.arraycopy(tmp, 4, a, 4, 16);
         }
 
-        matcopy(result, 0, a, 0, 20);
+        System.arraycopy(a, 0, result, 0, 20);
     }
 
-    void test_matrix() {
+    static void test_matrix() {
         float[] params = { 1.0f, 3.99f };
         float[] a = new float[20];
         make_state_transition(a, (int) (params[0] * (1 << 24)), (int) (params[1] * (1 << 24)));
         dump_matrix(a);
     }
 
-    void process(final int[][] inbufs, final int[] control_in, final int[] control_last, int[][] outbufs) {
+    public void process(final int[][] inbufs, final int[] control_in, final int[] control_last, int[][] outbufs) {
         int alpha = compute_alpha(control_last[0]);
         int alpha_in = compute_alpha(control_in[0]);
         int delta_alpha = (alpha_in - alpha) >> Note.LG_N;

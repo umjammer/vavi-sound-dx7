@@ -24,12 +24,12 @@ package vavi.sound.dx7;
  * use.
  */
 public class Freqlut {
-    static final int LG_N_SAMPLES = 10;
-    static final int N_SAMPLES = 1 << LG_N_SAMPLES;
-    static final int SAMPLE_SHIFT = 24 - LG_N_SAMPLES;
-    static final int MAX_LOGFREQ_INT = 20;
+    private static final int LG_N_SAMPLES = 10;
+    private static final int N_SAMPLES = 1 << LG_N_SAMPLES;
+    private static final int SAMPLE_SHIFT = 24 - LG_N_SAMPLES;
+    private static final int MAX_LOGFREQ_INT = 20;
 
-    static int[] lut = new int[N_SAMPLES + 1];
+    private static int[] lut = new int[N_SAMPLES + 1];
 
     public static void init(double sample_rate) {
         double y = (1L << (24 + MAX_LOGFREQ_INT)) / sample_rate;
@@ -42,7 +42,7 @@ public class Freqlut {
 
     // Note: if logfreq is more than 20.0, the results will be inaccurate. However,
     // that will be many times the Nyquist rate.
-    static int lookup(int logfreq) {
+    public static int lookup(int logfreq) {
         int ix = (logfreq & 0xffffff) >> SAMPLE_SHIFT;
 
         int y0 = lut[ix];

@@ -19,10 +19,10 @@ package vavi.sound.dx7;
 
 class Exp2 {
 
-    static final int EXP2_LG_N_SAMPLES = 10;
-    static final int EXP2_N_SAMPLES = 1 << EXP2_LG_N_SAMPLES;
+    private static final int EXP2_LG_N_SAMPLES = 10;
+    private static final int EXP2_N_SAMPLES = 1 << EXP2_LG_N_SAMPLES;
 
-    static int[] exp2tab = new int[EXP2_N_SAMPLES << 1];
+    private static int[] exp2tab = new int[EXP2_N_SAMPLES << 1];
 
     static {
         double inc = Math.pow(2, 1.0 / EXP2_N_SAMPLES);
@@ -37,7 +37,7 @@ class Exp2 {
         exp2tab[(EXP2_N_SAMPLES << 1) - 2] = (1 << 31) - exp2tab[(EXP2_N_SAMPLES << 1) - 1];
     }
 
-    static final int lookup(int x) {
+    public static final int lookup(int x) {
         final int SHIFT = 24 - EXP2_LG_N_SAMPLES;
         int lowbits = x & ((1 << SHIFT) - 1);
         int x_int = (x >> (SHIFT - 1)) & ((EXP2_N_SAMPLES - 1) << 1);
@@ -50,10 +50,10 @@ class Exp2 {
 }
 
 class Tanh {
-    static final int TANH_LG_N_SAMPLES = 10;
-    static final int TANH_N_SAMPLES = 1 << TANH_LG_N_SAMPLES;
+    private static final int TANH_LG_N_SAMPLES = 10;
+    private static final int TANH_N_SAMPLES = 1 << TANH_LG_N_SAMPLES;
 
-    static int[] tanhtab = new int[TANH_N_SAMPLES << 1];
+    private static int[] tanhtab = new int[TANH_N_SAMPLES << 1];
 
     static {
         double step = 4.0 / TANH_N_SAMPLES;
@@ -77,7 +77,7 @@ class Tanh {
         tanhtab[(TANH_N_SAMPLES << 1) - 2] = lasty - tanhtab[(TANH_N_SAMPLES << 1) - 1];
     }
 
-    static int lookup(int x) {
+    public static int lookup(int x) {
         int signum = x >> 31;
         x ^= signum;
         if (x >= (4 << 24)) {

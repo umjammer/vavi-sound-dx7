@@ -23,19 +23,19 @@ import vavi.util.Debug;
 
 public class Note {
 
-    static final int LG_N = 6;
+    public static final int LG_N = 6;
     public static final int N = 1 << LG_N;
 
-    FmCore core_ = new FmCore();
-    Env[] env_ = new Env[6];
-    FmCore.FmOpParams[] params_ = new FmCore.FmOpParams[6];
-    PitchEnv pitchenv_;
-    int[] basepitch_ = new int[6];
-    int[] fb_buf_ = new int[2];
-    int fb_shift_;
-    int algorithm_;
-    int pitchmoddepth_;
-    int pitchmodsens_;
+    private FmCore core_ = new FmCore();
+    private Env[] env_ = new Env[6];
+    private FmCore.FmOpParams[] params_ = new FmCore.FmOpParams[6];
+    private PitchEnv pitchenv_;
+    private int[] basepitch_ = new int[6];
+    private int[] fb_buf_ = new int[2];
+    private int fb_shift_;
+    private int algorithm_;
+    private int pitchmoddepth_;
+    private int pitchmodsens_;
 
     private int midinoteToLogfreq(int midinote) {
         final int base = 50857777; // (1 << 24) * (log(440) / log(2) - 69/12)

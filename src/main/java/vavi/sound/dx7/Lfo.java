@@ -20,26 +20,26 @@ package vavi.sound.dx7;
 /**
  * Low frequency oscillator, compatible with DX7
  */
-class Lfo {
+public class Lfo {
 
-    long phase_;  // Q32
-    long delta_;
-    byte waveform_;
-    byte randstate_;
-    boolean sync_;
+    private long phase_;  // Q32
+    private long delta_;
+    private byte waveform_;
+    private byte randstate_;
+    private boolean sync_;
 
-    long delaystate_;
-    long delayinc_;
-    long delayinc2_;
+    private long delaystate_;
+    private long delayinc_;
+    private long delayinc2_;
 
-    static int unit_;
+    private static int unit_;
 
-    static void init(double sample_rate) {
+    public static void init(double sample_rate) {
         // finalant is 1 << 32 / 15.5s / 11
         unit_ = (int) (Note.N * 25190424 / sample_rate + 0.5);
     }
 
-    void reset(final byte[] params, int ofs) {
+    public void reset(final byte[] params, int ofs) {
         int rate = params[ofs + 0]; // 0..99
         int sr = rate == 0 ? 1 : (165 * rate) >> 6;
         sr *= sr < 160 ? 11 : (11 + ((sr - 160) >> 4));
@@ -60,7 +60,7 @@ class Lfo {
     }
 
     // result is 0..1 in Q24
-    int getsample() {
+    public int getsample() {
         phase_ += delta_;
         int x;
         switch (waveform_) {
@@ -88,7 +88,7 @@ class Lfo {
     }
 
     // result is 0..1 in Q24
-    int getdelay() {
+    public int getdelay() {
         int delta = (int) (delaystate_ < (1 << 31) ? delayinc_ : delayinc2_);
         int d = (int) (delaystate_ + delta);
         if (d < delayinc_) {
@@ -102,7 +102,7 @@ class Lfo {
         }
     }
 
-    void keydown() {
+    public void keydown() {
         if (sync_) {
             phase_ = (1 << 31) - 1;
         }

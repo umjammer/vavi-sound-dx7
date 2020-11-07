@@ -23,28 +23,28 @@ import vavi.util.Debug;
 
 class Sawtooth {
 
-    static final int R = (1 << 29);
-    static final int LG_N_SAMPLES = 10;
-    static final int N_SAMPLES = (1 << LG_N_SAMPLES);
-    static final int N_PARTIALS_MAX = (N_SAMPLES / 2);
-    static final int LG_SLICES_PER_OCTAVE = 2;
-    static final int SLICES_PER_OCTAVE = (1 << LG_SLICES_PER_OCTAVE);
-    static final int SLICE_SHIFT = (24 - LG_SLICES_PER_OCTAVE);
-    static final int SLICE_EXTRA = 3;
-    static final int N_SLICES = 36;
+    private static final int R = (1 << 29);
+    private static final int LG_N_SAMPLES = 10;
+    private static final int N_SAMPLES = (1 << LG_N_SAMPLES);
+    private static final int N_PARTIALS_MAX = (N_SAMPLES / 2);
+    private static final int LG_SLICES_PER_OCTAVE = 2;
+    private static final int SLICES_PER_OCTAVE = (1 << LG_SLICES_PER_OCTAVE);
+    private static final int SLICE_SHIFT = (24 - LG_SLICES_PER_OCTAVE);
+    private static final int SLICE_EXTRA = 3;
+    private static final int N_SLICES = 36;
     // 0.5 * (log(440./44100) / log(2) + log(440./48000) / log(2) + 2./12) + 1./64 - 3 in Q24
-    static final int SLICE_BASE = 161217316;
-    static final int LOW_FREQ_LIMIT = -SLICE_BASE;
-    static final double NEG2OVERPI = -0.63661977236758138;
+    private static final int SLICE_BASE = 161217316;
+    private static final int LOW_FREQ_LIMIT = -SLICE_BASE;
+    private static final double NEG2OVERPI = -0.63661977236758138;
 
-    static int[][] sawtooth = new int[N_SLICES][N_SAMPLES];
+    private static int[][] sawtooth = new int[N_SLICES][N_SAMPLES];
 
-    static int sawtooth_freq_off;
+    private static int sawtooth_freq_off;
 
     // There's a fair amount of lookup table and so on that needs to be set before
     // generating any signal. In Java, this would be done by a separate factory class.
     // Here, we're just going to do it as globals.
-    static void init(double sample_rate) {
+    public static void init(double sample_rate) {
         sawtooth_freq_off = (int) (-(1 << 24) * Math.log(sample_rate) / Math.log(2));
         int[] lut = new int[N_SAMPLES / 2];
 
@@ -103,17 +103,17 @@ class Sawtooth {
         }
     }
 
-    int phase;
+    private int phase;
 
-    Sawtooth() {
+    public Sawtooth() {
         phase = 0;
     }
 
-    int compute(int phase) {
+    private int compute(int phase) {
         return phase * 2 - (1 << 24);
     }
 
-    int lookup_1(int phase, int slice) {
+    private int lookup_1(int phase, int slice) {
         int phase_int = (phase >> (24 - LG_N_SAMPLES)) & (N_SAMPLES - 1);
         int lowbits = phase & ((1 << (24 - LG_N_SAMPLES)) - 1);
         int y0 = sawtooth[slice][phase_int];
@@ -122,7 +122,7 @@ class Sawtooth {
         return (int) (y0 + ((((long) (y1 - y0) * (long) lowbits)) >> (24 - LG_N_SAMPLES)));
     }
 
-    int lookup_2(int phase, int slice, int slice_lowbits) {
+    private int lookup_2(int phase, int slice, int slice_lowbits) {
         int phase_int = (phase >> (24 - LG_N_SAMPLES)) & (N_SAMPLES - 1);
         int lowbits = phase & ((1 << (24 - LG_N_SAMPLES)) - 1);
         int y0 = sawtooth[slice][phase_int];
@@ -136,7 +136,7 @@ class Sawtooth {
         return (int) (y4 + ((((long) (y5 - y4) * (long) slice_lowbits)) >> (SLICE_SHIFT - SLICE_EXTRA)));
     }
 
-    void process(final int[][] inbufs, final int[] control_in, final int[] control_last, int[][] outbufs) {
+    public void process(final int[][] inbufs, final int[] control_in, final int[] control_last, int[][] outbufs) {
         int logf = control_last[0];
         int[] obuf = outbufs[0];
         int actual_logf = logf + sawtooth_freq_off;

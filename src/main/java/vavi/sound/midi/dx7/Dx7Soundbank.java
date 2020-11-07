@@ -19,26 +19,23 @@ import vavi.util.Debug;
 
 
 /**
- * Dx7SoundBank.
+ * Dx7Soundbank.
  *
  * @author <a href="mailto:umjammer@gmail.com">Naohide Sano</a> (umjammer)
  * @version 0.00 2020/10/31 umjammer initial version <br>
  */
-public class Dx7SoundBank implements Soundbank {
+public class Dx7Soundbank implements Soundbank {
 
-    /** */
-    public Dx7SoundBank() {
+    private static byte[][] b;
+
+    static {
         try {
-            DataInputStream dis = new DataInputStream(Dx7SoundBank.class.getResourceAsStream("/unpacked.bin"));
+            DataInputStream dis = new DataInputStream(Dx7Soundbank.class.getResourceAsStream("/unpacked.bin"));
             int n = dis.available() / 156;
 Debug.println("patchs: " + n);
-            byte[][] b = new byte[n][156];
-
-            instruments = new Instrument[n];
+            b = new byte[n][156];
             for (int i = 0; i < n; i++) {
                 dis.readFully(b[i]);
-
-                instruments[i] = new Dx7Instrument(this, i / 128, i % 128, "instrument." + i / 128 + "." + i % 128, b[i]);
             }
 
         } catch (IOException e) {
@@ -47,11 +44,19 @@ Debug.println("patchs: " + n);
     }
 
     /** */
+    public Dx7Soundbank() {
+        instruments = new Instrument[b.length];
+        for (int i = 0; i < instruments.length; i++) {
+            instruments[i] = new Dx7Instrument(this, i / 128, i % 128, "instrument." + i / 128 + "." + i % 128, b[i]);
+        }
+    }
+
+    /** */
     private Instrument[] instruments;
 
     @Override
     public String getName() {
-        return "Dx7SoundBank";
+        return "Dx7Soundbank";
     }
 
     @Override
@@ -93,7 +98,7 @@ Debug.println("patchs: " + n);
     /** */
     public static class Dx7Instrument extends Instrument {
         byte[] data;
-        protected Dx7Instrument(Dx7SoundBank sounBbank, int bank, int program, String name, byte[] data) {
+        protected Dx7Instrument(Dx7Soundbank sounBbank, int bank, int program, String name, byte[] data) {
             super(sounBbank, new Patch(bank, program), name, byte[].class);
             this.data = data;
         }
