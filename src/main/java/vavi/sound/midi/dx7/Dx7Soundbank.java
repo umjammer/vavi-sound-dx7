@@ -15,6 +15,9 @@ import javax.sound.midi.Patch;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.SoundbankResource;
 
+import com.sun.media.sound.ModelPatch;
+import com.sun.media.sound.SimpleInstrument;
+
 import vavi.util.Debug;
 
 
@@ -24,9 +27,37 @@ import vavi.util.Debug;
  * @author <a href="mailto:umjammer@gmail.com">Naohide Sano</a> (umjammer)
  * @version 0.00 2020/10/31 umjammer initial version <br>
  */
+@SuppressWarnings("restriction")
 public class Dx7Soundbank implements Soundbank {
 
+    /** */
+    public static class Dx7Instrument extends SimpleInstrument {
+        byte[] data;
+        protected Dx7Instrument(int bank, int program, boolean isPercussion, byte[] data) {
+            setPatch(new ModelPatch(bank, program, isPercussion));
+            this.data = data;
+        }
+
+        @Override
+        public String getName() {
+            return new String(data, 145, 10);
+        }
+
+        @Override
+        public Class<?> getDataClass() {
+            return byte[].class;
+        }
+
+        @Override
+        public Object getData() {
+            return data;
+        }
+    }
+
     private static byte[][] b;
+
+    /** */
+    private static Instrument[] instruments;
 
     static {
         try {
@@ -41,18 +72,22 @@ Debug.println("patchs: " + n);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
 
-    /** */
-    public Dx7Soundbank() {
-        instruments = new Instrument[b.length];
+        instruments = new Instrument[129];
         for (int i = 0; i < instruments.length; i++) {
-            instruments[i] = new Dx7Instrument(this, i / 128, i % 128, "instrument." + i / 128 + "." + i % 128, b[i]);
+            if (i >= 113 && i <= 120) {
+                // Percussive
+                instruments[i] = new Dx7Instrument(0, i, true, b[8]);
+            } else {
+                instruments[i] = new Dx7Instrument(0, i, false, b[3]);
+            }
         }
+        instruments[128] = new Dx7Instrument(0, 0, true, b[8]);
     }
 
-    /** */
-    private Instrument[] instruments;
+    static byte[] getDireectBuffer(int p) {
+        return (byte[]) instruments[p].getData();
+    }
 
     @Override
     public String getName() {
@@ -86,26 +121,27 @@ Debug.println("patchs: " + n);
 
     @Override
     public Instrument getInstrument(Patch patch) {
-        for (int i = 0; i < instruments.length; i++) {
-            if (instruments[i].getPatch().getProgram() == patch.getProgram() &&
-                instruments[i].getPatch().getBank() == patch.getBank()) {
-                return instruments[i];
+      //Debug.println("patch: " + patch.getBank() + "," + patch.getProgram() + ", " + patch.getClass().getName());
+        for (Instrument ins : instruments) {
+            Patch p = ins.getPatch();
+            if (p.getBank() != patch.getBank())
+                continue;
+            if (p.getProgram() != patch.getProgram())
+                continue;
+            if (p instanceof ModelPatch && patch instanceof ModelPatch) {
+                if (((ModelPatch)p).isPercussion()
+                        != ((ModelPatch)patch).isPercussion()) {
+                    continue;
+                }
             }
+//Debug.println("instrument: " + ins.getPatch().getBank() + ", " + ins.getPatch().getProgram() + ", " + ins.getName());
+            return ins;
         }
-        return null;
-    }
-
-    /** */
-    public static class Dx7Instrument extends Instrument {
-        byte[] data;
-        protected Dx7Instrument(Dx7Soundbank sounBbank, int bank, int program, String name, byte[] data) {
-            super(sounBbank, new Patch(bank, program), name, byte[].class);
-            this.data = data;
-        }
-
-        @Override
-        public Object getData() {
-            return data;
+Debug.printf("instrument not found for: %d.%d, %02x", patch.getBank(), patch.getProgram(), (patch.getBank() >> 7));
+        if (patch.getBank() >> 7 == 0x7f || patch.getBank() >> 7 == 0x78) { // TODO check spec.
+            return instruments[128];
+        } else {
+            return instruments[0];
         }
     }
 }

@@ -51,20 +51,21 @@ public class Dx7SynthesizerTest {
     }
 
     @Test
-    @Disabled
+//    @Disabled
     void test() throws Exception {
         Synthesizer synthesizer = new Dx7Synthesizer();
         synthesizer.open();
 Debug.println("synthesizer: " + synthesizer.getClass().getName());
 
         Sequencer sequencer = MidiSystem.getSequencer(false);
-        sequencer.getTransmitter().setReceiver(synthesizer.getReceiver());
         sequencer.open();
 Debug.println("sequencer: " + sequencer.getClass().getName());
+        sequencer.getTransmitter().setReceiver(synthesizer.getReceiver());
 
-        String filename = "../../src/sano-n/vavi-apps-dx7/tmp/midi/minute_waltz.mid";
+//        String filename = "../../src/sano-n/vavi-apps-dx7/tmp/midi/minute_waltz.mid";
+//        String filename = "1/TongPoo.mid";
 //        String filename = "1/title-screen.mid";
-//        String filename = "1/overworld.mid";
+        String filename = "1/overworld.mid";
 //        String filename = "1/m0057_01.mid";
 //        String filename = "1/ac4br_gm.MID";
         File file = new File(System.getProperty("user.home"), "/Music/midi/" + filename);
@@ -73,7 +74,7 @@ Debug.println("sequencer: " + sequencer.getClass().getName());
         CountDownLatch countDownLatch = new CountDownLatch(1);
         MetaEventListener mel = new MetaEventListener() {
             public void meta(MetaMessage meta) {
-System.err.println("META: " + meta.getType());
+//System.err.println("META: " + meta.getType());
                 if (meta.getType() == 47) {
                     countDownLatch.countDown();
                 }
@@ -127,6 +128,7 @@ Debug.println("synthesizer: " + synthesizer);
     }
 
     @Test
+    @Disabled
     void test3() throws Exception {
         Synthesizer synthesizer = MidiSystem.getSynthesizer();
 Debug.println("synthesizer: " + synthesizer.getClass().getName());
@@ -182,10 +184,6 @@ System.err.println("END");
         PitchEnv.init(sample_rate);
 
         int k = 1004;
-
-//        Voice[] voices = SavenLoad.loadSetOfVoices("tmp/Original Yamaha/DX7 ROM1/ROM1A.syx").voice;
-//Debug.println("patchs: " + voices.length);
-//        byte[] b1 = voices[k].allToByte();
 
         DataInputStream dis = new DataInputStream(Dx7SynthesizerTest.class.getResourceAsStream("/unpacked.bin"));
         int n = dis.available() / 156;

@@ -193,7 +193,7 @@ public class Note {
     static final int kControllerPitch = 128;
 
     public static class Controllers {
-        int[] values_ = new int[129];
+        public int[] values_ = new int[129];
         public Controllers(int value) {
             values_[kControllerPitch] = value;
         }
