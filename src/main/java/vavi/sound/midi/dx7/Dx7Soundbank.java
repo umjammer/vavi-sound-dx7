@@ -101,12 +101,12 @@ Debug.println("patchs: " + n);
 
     @Override
     public String getVendor() {
-        return "vavisoft";
+        return "vavi";
     }
 
     @Override
     public String getDescription() {
-        return "soundbank for DX7";
+        return "Soundbank for DX7";
     }
 
     @Override

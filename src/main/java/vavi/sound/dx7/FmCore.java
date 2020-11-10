@@ -48,7 +48,7 @@ class FmCore {
         }
     }
 
-    private static final FmAlgorithm[] algorithms = new FmAlgorithm[] {
+    private static final FmAlgorithm[] algorithms = {
         new FmAlgorithm(0xc1, 0x11, 0x11, 0x14, 0x01, 0x14), // 1
         new FmAlgorithm(0x01, 0x11, 0x11, 0x14, 0xc1, 0x14), // 2
         new FmAlgorithm(0xc1, 0x11, 0x14, 0x01, 0x11, 0x14), // 3

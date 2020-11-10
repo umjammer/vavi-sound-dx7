@@ -27,6 +27,7 @@ import javax.sound.sampled.SourceDataLine;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import com.sun.media.sound.ModelAbstractOscillator;
 
@@ -52,6 +53,7 @@ public class Dx7SynthesizerTest {
 
     @Test
 //    @Disabled
+    @DisabledIfEnvironmentVariable(named = "GITHUB_WORKFLOW", matches = ".*")
     void test() throws Exception {
         Synthesizer synthesizer = new Dx7Synthesizer();
         synthesizer.open();
@@ -129,6 +131,7 @@ Debug.println("synthesizer: " + synthesizer);
 
     @Test
     @Disabled
+    @DisabledIfEnvironmentVariable(named = "GITHUB_WORKFLOW", matches = ".*")
     void test3() throws Exception {
         Synthesizer synthesizer = MidiSystem.getSynthesizer();
 Debug.println("synthesizer: " + synthesizer.getClass().getName());
