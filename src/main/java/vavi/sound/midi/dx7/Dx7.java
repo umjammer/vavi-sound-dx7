@@ -125,7 +125,7 @@ Debug.println("sampleRate: " + sampleRate);
 
     public void programChange(int p, byte[] patch, int ofs) {
         // TODO location
-        byte[] b = Dx7Soundbank.getDireectBuffer(p);
+        byte[] b = Dx7Soundbank.getDirectBuffer(p);
         System.arraycopy(patch, ofs, b, 0, b.length);
         lfo.reset(b, 137);
 

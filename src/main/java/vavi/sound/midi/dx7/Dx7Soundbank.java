@@ -9,6 +9,9 @@ package vavi.sound.midi.dx7;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
 import javax.sound.midi.Instrument;
 import javax.sound.midi.Patch;
@@ -32,20 +35,26 @@ public class Dx7Soundbank implements Soundbank {
 
     /** */
     public static class Dx7Instrument extends SimpleInstrument {
-        byte[] data;
-        protected Dx7Instrument(int bank, int program, boolean isPercussion, byte[] data) {
+        Object data;
+        protected Dx7Instrument(int bank, int program, boolean isPercussion, Object data) {
             setPatch(new ModelPatch(bank, program, isPercussion));
+            if (isPercussion && !(data instanceof byte[][])) {
+                throw new IllegalArgumentException("percussuon data must be byte[][]");
+            }
+            if (!isPercussion && !(data instanceof byte[])) {
+                throw new IllegalArgumentException("melodic data must be byte[]");
+            }
             this.data = data;
         }
 
         @Override
         public String getName() {
-            return new String(data, 145, 10);
+            return getPatch().isPercussion() ? "Percussion" : new String((byte[]) data, 145, 10);
         }
 
         @Override
         public Class<?> getDataClass() {
-            return byte[].class;
+            return getPatch().isPercussion() ? byte[][].class : byte[].class;
         }
 
         @Override
@@ -57,7 +66,7 @@ public class Dx7Soundbank implements Soundbank {
     private static byte[][] b;
 
     /** */
-    private static Instrument[] instruments;
+    private static Map<String, Instrument> instruments = new HashMap<>();
 
     static {
         try {
@@ -69,24 +78,28 @@ Debug.println("patchs: " + n);
                 dis.readFully(b[i]);
             }
 
+            Properties props = new Properties();
+            props.load(Dx7Soundbank.class.getResourceAsStream("/dx7.properties"));
+
+            for (int i = 0; i < 128; i++) {
+                int id = Integer.parseInt(props.getProperty("inst." + i));
+                instruments.put(0 + "." + i, new Dx7Instrument(0, i, false, b[id]));
+            }
+
+            byte[][] drums = new byte[128][];
+            for (int i = 0; i < 128; i++) {
+                int id = Integer.parseInt(props.getProperty("drum." + i));
+                drums[i] = b[id];
+            }
+
+            instruments.put("p." + 0 + "." + 0, new Dx7Instrument(0, 0, true, drums));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-
-        instruments = new Instrument[129];
-        for (int i = 0; i < instruments.length; i++) {
-            if (i >= 113 && i <= 120) {
-                // Percussive
-                instruments[i] = new Dx7Instrument(0, i, true, b[8]);
-            } else {
-                instruments[i] = new Dx7Instrument(0, i, false, b[3]);
-            }
-        }
-        instruments[128] = new Dx7Instrument(0, 0, true, b[8]);
     }
 
-    static byte[] getDireectBuffer(int p) {
-        return (byte[]) instruments[p].getData();
+    static byte[] getDirectBuffer(int p) {
+        return (byte[]) instruments.get("0." + p).getData();
     }
 
     @Override
@@ -116,33 +129,34 @@ Debug.println("patchs: " + n);
 
     @Override
     public Instrument[] getInstruments() {
-        return instruments;
+        return instruments.values().stream().toArray(Instrument[]::new);
     }
+
+    private Map<String, Instrument> emergencies = new HashMap<>();
 
     @Override
     public Instrument getInstrument(Patch patch) {
-      //Debug.println("patch: " + patch.getBank() + "," + patch.getProgram() + ", " + patch.getClass().getName());
-        for (Instrument ins : instruments) {
-            Patch p = ins.getPatch();
-            if (p.getBank() != patch.getBank())
-                continue;
-            if (p.getProgram() != patch.getProgram())
-                continue;
-            if (p instanceof ModelPatch && patch instanceof ModelPatch) {
-                if (((ModelPatch)p).isPercussion()
-                        != ((ModelPatch)patch).isPercussion()) {
-                    continue;
-                }
-            }
-//Debug.println("instrument: " + ins.getPatch().getBank() + ", " + ins.getPatch().getProgram() + ", " + ins.getName());
-            return ins;
-        }
-Debug.printf("instrument not found for: %d.%d, %02x", patch.getBank(), patch.getProgram(), (patch.getBank() >> 7));
-        if (patch.getBank() >> 7 == 0x7f || patch.getBank() >> 7 == 0x78) { // TODO check spec.
-            return instruments[128];
+//Debug.println("patch: " + patch.getBank() + "," + patch.getProgram() + ", " + patch.getClass().getName());
+        Instrument ins;
+        boolean isPercussion = patch instanceof ModelPatch && ((ModelPatch) patch).isPercussion();
+        String k = (isPercussion ? "p." : "") + patch.getBank() + "." + patch.getProgram();
+        if (instruments.containsKey(k)) {
+            ins = instruments.get(k);
+        } else if (emergencies.containsKey(k)) {
+            ins = emergencies.get(k);
         } else {
-            return instruments[0];
+Debug.printf("instrument not found for: %d.%d, %02x, %s", patch.getBank(), patch.getProgram(), (patch.getBank() >> 7), isPercussion);
+            Instrument emergency;
+            if (patch.getBank() >> 7 == 0x7f || patch.getBank() >> 7 == 0x78 || isPercussion) { // TODO check spec.
+                emergency = instruments.get("p.0.0");
+            } else {
+                emergency = instruments.get("0.0");
+            }
+            emergencies.put(k, emergency);
+            ins = emergency;
         }
+//Debug.println("instrument: " + ins.getPatch().getBank() + ", " + ins.getPatch().getProgram() + ", " + ins.getName());
+        return ins;
     }
 }
 
