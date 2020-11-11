@@ -28,9 +28,8 @@ class Dx7 {
 
     private static class ActiveNote {
         boolean keydown;
-
+        // TODO should be use the value in SoftVoice?
         boolean sustained;
-
         Note note;
     }
 
@@ -44,6 +43,7 @@ class Dx7 {
 
     private int[] filterControl = new int[3];
 
+    // TODO should be use the value in SoftVoice?
     private boolean sustain;
 
     Dx7() {
@@ -58,7 +58,7 @@ class Dx7 {
 
     static void setSampleRate(float sampleRate) {
         if (Dx7.sampleRate != sampleRate) {
-            Debug.println("sampleRate: " + sampleRate);
+Debug.println("sampleRate: " + sampleRate);
             Freqlut.init(sampleRate);
             Lfo.init(sampleRate);
             PitchEnv.init(sampleRate);
@@ -71,7 +71,6 @@ class Dx7 {
     private Dx7.ActiveNote activeNote;
 
     private int[] audioBuf = new int[BUFFER_SIZE];
-
     private int[] audioBuf2 = new int[BUFFER_SIZE];
 
     void write(int offset, int len, int i, float[] buffer, float[] extraBuf) {
@@ -138,13 +137,20 @@ Debug.println("Loaded patch " + p + ": " + new String(b, 145, 10));
     }
 
     public void controlChange(int controller, int value) {
-        if (controller == 1) {
+        switch (controller) {
+        case 1:
             filterControl[0] = 142365917 + value * 917175;
-        } else if (controller == 2) {
+Debug.println("control change: " + controller + ", " + value);
+            break;
+        case 2:
             filterControl[1] = value * 528416;
-        } else if (controller == 3) {
+Debug.println("control change: " + controller + ", " + value);
+            break;
+        case 3:
             filterControl[2] = value * 528416;
-        } else if (controller == 64) {
+Debug.println("control change: " + controller + ", " + value);
+            break;
+        case 64:
             sustain = value != 0;
             if (!sustain) {
                 for (ActiveNote activeNote : activeNotes) {
@@ -155,9 +161,10 @@ Debug.println("Loaded patch " + p + ": " + new String(b, 145, 10));
                     }
                 }
             }
+Debug.println("control change: " + controller + ", " + value);
+            break;
         }
         controllers.values_[controller] = value;
-Debug.println("control change: " + controller + ", " + value);
     }
 }
 /* */

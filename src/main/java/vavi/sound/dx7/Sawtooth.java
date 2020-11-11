@@ -23,6 +23,7 @@ import vavi.util.Debug;
 
 class Sawtooth {
 
+    @SuppressWarnings("unused")
     private static final int R = (1 << 29);
     private static final int LG_N_SAMPLES = 10;
     private static final int N_SAMPLES = (1 << LG_N_SAMPLES);

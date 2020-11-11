@@ -135,19 +135,16 @@ class FmCore {
                     add = false;
                 }
                 if (inbus == 0 || !has_contents[inbus]) {
-                    // todo: more than one op in a feedback loop
+                    // TODO more than one op in a feedback loop
                     if ((flags & 0xc0) == 0xc0 && feedback_shift < 16) {
-                        // cout << op << " fb " << inbus << outbus << add <<
-                        // endl;
+                        // Debug.println(op + " fb " + inbus + outbus + add);
                         FmOpKernel.compute_fb(outptr, param.phase, param.freq, gain1, gain2, fb_buf, feedback_shift, add);
                     } else {
-                        // cout << op << " pure " << inbus << outbus << add <<
-                        // endl;
+                        // Debug.println(op + " pure " + inbus + outbus + add);
                         FmOpKernel.compute_pure(outptr, param.phase, param.freq, gain1, gain2, add);
                     }
                 } else {
-                    // cout << op << " normal " << inbus << outbus << " " <<
-                    // param.freq << add << endl;
+                    // Debug.println(op + " normal " + inbus + outbus + " " + param.freq + add);
                     FmOpKernel.compute(outptr, outptr, param.phase, param.freq, gain1, gain2, add); // TODO 2nd outptr
                 }
                 has_contents[outbus] = true;

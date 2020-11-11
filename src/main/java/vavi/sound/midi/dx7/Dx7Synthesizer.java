@@ -199,6 +199,7 @@ Debug.println("wrapped synthesizer: " + synthesizer.getClass().getName());
 
     private List<Receiver> receivers = new ArrayList<>();
 
+    // TODO move into DX7 class?
     private class Dx7Receiver implements Receiver {
         Receiver receiver;
 
