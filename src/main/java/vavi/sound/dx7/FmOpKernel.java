@@ -27,7 +27,7 @@ class FmOpKernel {
             for (int i = 0; i < Note.N; i++) {
                 gain += dgain;
                 int y = Sin.lookup(phase + input[i]);
-                output[i] += ((long) y * (long) gain) >> 24;
+                output[i] += (int) (((long) y * (long) gain) >> 24);
                 phase += freq;
             }
         } else {
