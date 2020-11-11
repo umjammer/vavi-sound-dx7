@@ -86,7 +86,7 @@ class Sawtooth {
                     int err = s - good;
                     int abs_err = err > 0 ? err : -err;
                     maxerr = abs_err > maxerr ? abs_err : maxerr;
-                    ds += ((long) cm2 * (long) s + (1 << 28)) >> 29;
+                    ds += (int) (((long) cm2 * (long) s + (1 << 28)) >> 29);
                     s += (ds + round) >> dshift;
                 }
                 Debug.println(Level.FINE, maxerr);
