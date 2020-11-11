@@ -4,10 +4,16 @@
 
 DX7 emulated synthesizer. `javax.sound.midi.spi` compatible.
 
+## spec.
+
+ * sysex [43, 00, 09, 20, 00] supported
+ * control change 1, 2, 3, 64 supported
+
 ## install
 
  * maven repo: [jitpack](https://jitpack.io/#umjammer/vavi-sound-dx7)
  * copy [`unpacked.bin`](https://github.com/bwhitman/learnfm/blob/f5415157c65b0298dad692e5e332c71644718e28/unpacked.bin) into your class path
+ * edit `dx7.properties`, create your instruments set
 
 ## with [Herr Mueller's DX7](http://www.vstforx.de/index.php/disco-news-blog/29-goodies/92-vstforx-presents-herr-mueller-s-dx7)
 
@@ -19,3 +25,9 @@ without the real dx7 machine, you can play dx7 sound!
 
  * https://github.com/google/music-synthesizer-for-android
  * gervill
+
+## TODO
+
+ * better default instruments set
+ * syx, vcs loader (use SoundbankReader)
+ * automatic instruments recognizer/classifier
