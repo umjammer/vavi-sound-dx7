@@ -3,7 +3,7 @@
 
   <groupId>vavi</groupId>
   <artifactId>vavi-sound-dx7</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
 
   <build>
     <plugins>

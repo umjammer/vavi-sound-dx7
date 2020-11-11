@@ -23,6 +23,7 @@ import vavi.util.Debug;
 
 class Sawtooth {
 
+    @SuppressWarnings("unused")
     private static final int R = (1 << 29);
     private static final int LG_N_SAMPLES = 10;
     private static final int N_SAMPLES = (1 << LG_N_SAMPLES);
@@ -86,7 +87,7 @@ class Sawtooth {
                     int err = s - good;
                     int abs_err = err > 0 ? err : -err;
                     maxerr = abs_err > maxerr ? abs_err : maxerr;
-                    ds += ((long) cm2 * (long) s + (1 << 28)) >> 29;
+                    ds += (int) (((long) cm2 * (long) s + (1 << 28)) >> 29);
                     s += (ds + round) >> dshift;
                 }
                 Debug.println(Level.FINE, maxerr);

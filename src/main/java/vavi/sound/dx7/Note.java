@@ -204,7 +204,7 @@ public class Note {
         long pmd = pitchmoddepth_ * lfo_delay; // Q32
         // TODO: add modulation sources (mod wheel, etc)
         int senslfo = pitchmodsens_ * (lfo_val - (1 << 23));
-        pitchmod += (pmd * senslfo) >> 39;
+        pitchmod += (int) ((pmd * senslfo) >> 39);
 
         // hardcodes a pitchbend range of 3 semitones, TODO make configurable
         int pitchbend = ctrls.values_[kControllerPitch];

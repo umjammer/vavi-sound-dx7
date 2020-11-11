@@ -7,6 +7,7 @@
 package vavi.sound.midi.dx7;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 import javax.sound.midi.Instrument;
 import javax.sound.midi.MidiChannel;
@@ -15,6 +16,10 @@ import javax.sound.midi.VoiceStatus;
 
 import com.sun.media.sound.ModelAbstractOscillator;
 import com.sun.media.sound.SimpleInstrument;
+
+import vavi.util.Debug;
+
+import com.sun.media.sound.ModelPatch;
 
 
 /**
@@ -79,7 +84,17 @@ public class Dx7Oscillator extends ModelAbstractOscillator {
     public void noteOn(MidiChannel channel, VoiceStatus voice, int noteNumber, int velocity) {
         if (velocity > 0) {
 //Debug.println("channel: " + voice.channel + ", patch: " + voice.bank + "," + voice.program);
-            dx7.noteOn((byte[]) getInstrument(new Patch(voice.bank, voice.program)).getData(), noteNumber, velocity);
+try {
+            // TODO how to define drums
+            if (voice.channel != 9) {
+                dx7.noteOn((byte[]) getInstrument(new Patch(voice.bank, voice.program)).getData(), noteNumber, velocity);
+            } else {
+                byte[][] drums = (byte[][]) getInstrument(new ModelPatch(voice.bank, voice.program, true)).getData();
+                dx7.noteOn(drums[noteNumber], noteNumber, velocity);
+            }
+} catch (Throwable t) {
+ Debug.println(Level.SEVERE, "ch: " + voice.channel + ", note: " + noteNumber);
+}
             super.noteOn(channel, voice, noteNumber, velocity);
         } else {
             dx7.noteOff();
