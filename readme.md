@@ -31,3 +31,4 @@ without the real dx7 machine, you can play dx7 sound!
  * better default instruments set
  * syx, vcs loader (use SoundbankReader)
  * automatic instruments recognizer/classifier
+ * ~~volume~~ works! thanks gervill

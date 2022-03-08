@@ -6,14 +6,17 @@
 
 package vavi.sound.dx7;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
 import javax.sound.midi.Instrument;
 import javax.sound.midi.MetaEventListener;
-import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Receiver;
@@ -23,7 +26,6 @@ import javax.sound.midi.Synthesizer;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
-import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.SourceDataLine;
 
 import org.junit.jupiter.api.Disabled;
@@ -38,6 +40,9 @@ import vavi.sound.midi.dx7.Dx7Soundbank;
 import vavi.sound.midi.dx7.Dx7Synthesizer;
 import vavi.util.Debug;
 import vavi.util.StringUtil;
+
+import static vavi.sound.SoundUtil.volume;
+import static vavi.sound.midi.MidiUtil.volume;
 
 
 /**
@@ -65,30 +70,29 @@ Debug.println("synthesizer: " + synthesizer.getClass().getName());
         Sequencer sequencer = MidiSystem.getSequencer(false);
         sequencer.open();
 Debug.println("sequencer: " + sequencer.getClass().getName());
-        sequencer.getTransmitter().setReceiver(synthesizer.getReceiver());
+        Receiver receiver = synthesizer.getReceiver();
+        sequencer.getTransmitter().setReceiver(receiver);
 
-//        String filename = "../../src/sano-n/vavi-apps-dx7/tmp/midi/minute_waltz.mid";
-//        String filename = "1/TongPoo.mid";
-//        String filename = "1/title-screen.mid";
-//        String filename = "1/overworld.mid";
-        String filename = "1/m0057_01.mid";
-//        String filename = "1/ac4br_gm.MID";
-        File file = new File(System.getProperty("user.home"), "/Music/midi/" + filename);
-        Sequence seq = MidiSystem.getSequence(file);
+        String filename = "Games/Puyopuyo - 08 STICKER OF PUYOPUYO.mid";
+//        String filename = "リッジレーサー GS.MID";
+//        String filename = "Super Mario Bros 2.mid";
+        Path file = Paths.get(System.getProperty("grive.home"), "/Music/midi/", filename);
+        Sequence seq = MidiSystem.getSequence(new BufferedInputStream(Files.newInputStream(file)));
 
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        MetaEventListener mel = new MetaEventListener() {
-            public void meta(MetaMessage meta) {
+        MetaEventListener mel = meta -> {
 //System.err.println("META: " + meta.getType());
-                if (meta.getType() == 47) {
-                    countDownLatch.countDown();
-                }
+            if (meta.getType() == 47) {
+                countDownLatch.countDown();
             }
         };
         sequencer.setSequence(seq);
         sequencer.addMetaEventListener(mel);
 System.err.println("START");
         sequencer.start();
+
+        volume(receiver, .2f); // gervill volume works!
+
         countDownLatch.await();
 System.err.println("END");
         sequencer.removeMetaEventListener(mel);
@@ -157,12 +161,10 @@ Debug.println("sequencer: " + sequencer.getClass().getName());
         sequencer.getTransmitter().setReceiver(receiver);
 
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        MetaEventListener mel = new MetaEventListener() {
-            public void meta(MetaMessage meta) {
+        MetaEventListener mel = meta -> {
 System.err.println("META: " + meta.getType());
-                if (meta.getType() == 47) {
-                    countDownLatch.countDown();
-                }
+            if (meta.getType() == 47) {
+                countDownLatch.countDown();
             }
         };
         sequencer.setSequence(seq);
@@ -201,10 +203,7 @@ Debug.println(instrument.getName());
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
         line.addLineListener(event -> { Debug.println(event.getType()); });
         line.open();
-FloatControl gainControl = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
-double gain = .2d; // number between 0 and 1 (loudest)
-float dB = (float) (Math.log(gain) / Math.log(10.0) * 20.0);
-gainControl.setValue(dB);
+        volume(line, .2d);
         line.start();
 
 for (int m = 35; m < 82; m++) {
@@ -260,10 +259,7 @@ Debug.println("drum: " + m);
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
         line.addLineListener(event -> { Debug.println(event.getType()); });
         line.open();
-FloatControl gainControl = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
-double gain = .2d; // number between 0 and 1 (loudest)
-float dB = (float) (Math.log(gain) / Math.log(10.0) * 20.0);
-gainControl.setValue(dB);
+        volume(line, .2d);
         line.start();
 
         Random r = new Random();
@@ -329,10 +325,7 @@ Debug.println("patchs: " + n);
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
         line.addLineListener(event -> { Debug.println(event.getType()); });
         line.open();
-FloatControl gainControl = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
-double gain = .2d; // number between 0 and 1 (loudest)
-float dB = (float) (Math.log(gain) / Math.log(10.0) * 20.0);
-gainControl.setValue(dB);
+        volume(line, .2d);
         line.start();
 
         Random r = new Random();
