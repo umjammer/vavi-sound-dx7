@@ -89,11 +89,13 @@ Debug.println("sampleRate: " + sampleRate);
             // TODO: maybe some dithering?
             float f;
             int x = clip_val;
-            f = ((float) x) / (float) 32768;
-            if (f > 1)
+            f = ((float) x) / (float) 0x8000;
+            if (f > 1) {
                 f = 1;
-            if (f < -1)
+            }
+            if (f < -1) {
                 f = -1;
+            }
             if (j < jmax) {
                 buffer[offset + i + j] = f;
             } else {
@@ -167,4 +169,5 @@ Debug.println("control change: " + controller + ", " + value);
         controllers.values_[controller] = value;
     }
 }
+
 /* */

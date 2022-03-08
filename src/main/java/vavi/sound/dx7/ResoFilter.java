@@ -27,12 +27,6 @@ package vavi.sound.dx7;
  */
 public class ResoFilter {
 
-//    private static double this_sample_rate;
-
-//    public static void init(double sample_rate) {
-//        this_sample_rate = sample_rate;
-//    }
-
     private int[] x = new int[4];
     private int[] w = new int[4];
     private int yy;

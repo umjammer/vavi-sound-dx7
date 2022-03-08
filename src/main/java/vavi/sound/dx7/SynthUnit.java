@@ -165,6 +165,7 @@ Debug.println("allocateNote: max");
         } else if (controller == 3) {
             filter_control_[2] = value * 528416;
         } else if (controller == 64) {
+            // damper pedal hold 1
             sustain_ = value != 0;
             if (!sustain_) {
                 for (int note = 0; note < max_active_notes; note++) {
