@@ -93,6 +93,8 @@ Debug.println("patchs: " + n);
             }
 
             instruments.put("p." + 0 + "." + 0, new Dx7Instrument(0, 0, true, drums));
+        } catch (NullPointerException e) {
+            throw new IllegalStateException("unpacked.bin might not be found in classpath", e);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
