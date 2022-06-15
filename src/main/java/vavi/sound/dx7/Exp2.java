@@ -22,27 +22,27 @@ class Exp2 {
     private static final int EXP2_LG_N_SAMPLES = 10;
     private static final int EXP2_N_SAMPLES = 1 << EXP2_LG_N_SAMPLES;
 
-    private static int[] exp2tab = new int[EXP2_N_SAMPLES << 1];
+    private static int[] exp2Tab = new int[EXP2_N_SAMPLES << 1];
 
     static {
         double inc = Math.pow(2, 1.0 / EXP2_N_SAMPLES);
         double y = 1 << 30;
         for (int i = 0; i < EXP2_N_SAMPLES; i++) {
-            exp2tab[(i << 1) + 1] = (int) Math.floor(y + 0.5);
+            exp2Tab[(i << 1) + 1] = (int) Math.floor(y + 0.5);
             y *= inc;
         }
         for (int i = 0; i < EXP2_N_SAMPLES - 1; i++) {
-            exp2tab[i << 1] = exp2tab[(i << 1) + 3] - exp2tab[(i << 1) + 1];
+            exp2Tab[i << 1] = exp2Tab[(i << 1) + 3] - exp2Tab[(i << 1) + 1];
         }
-        exp2tab[(EXP2_N_SAMPLES << 1) - 2] = (1 << 31) - exp2tab[(EXP2_N_SAMPLES << 1) - 1];
+        exp2Tab[(EXP2_N_SAMPLES << 1) - 2] = (1 << 31) - exp2Tab[(EXP2_N_SAMPLES << 1) - 1];
     }
 
-    public static final int lookup(int x) {
+    public static int lookup(int x) {
         final int SHIFT = 24 - EXP2_LG_N_SAMPLES;
         int lowbits = x & ((1 << SHIFT) - 1);
         int x_int = (x >> (SHIFT - 1)) & ((EXP2_N_SAMPLES - 1) << 1);
-        int dy = exp2tab[x_int];
-        int y0 = exp2tab[x_int + 1];
+        int dy = exp2Tab[x_int];
+        int y0 = exp2Tab[x_int + 1];
 
         int y = (int) (y0 + (((long)dy * (long)lowbits) >> SHIFT));
         return y >> (6 - (x >> 24));
@@ -53,13 +53,13 @@ class Tanh {
     private static final int TANH_LG_N_SAMPLES = 10;
     private static final int TANH_N_SAMPLES = 1 << TANH_LG_N_SAMPLES;
 
-    private static int[] tanhtab = new int[TANH_N_SAMPLES << 1];
+    private static int[] tanhTab = new int[TANH_N_SAMPLES << 1];
 
     static {
         double step = 4.0 / TANH_N_SAMPLES;
         double y = 0;
         for (int i = 0; i < TANH_N_SAMPLES; i++) {
-            tanhtab[(i << 1) + 1] = (int) ((1 << 24) * y + 0.5);
+            tanhTab[(i << 1) + 1] = (int) ((1 << 24) * y + 0.5);
             // printf("%d\n", tanhtab[(i << 1) + 1]);
             // Use a basic 4th order Runge-Kutte to compute tanh from its
             // differential equation.
@@ -71,10 +71,10 @@ class Tanh {
             y += dy;
         }
         for (int i = 0; i < TANH_N_SAMPLES - 1; i++) {
-            tanhtab[i << 1] = tanhtab[(i << 1) + 3] - tanhtab[(i << 1) + 1];
+            tanhTab[i << 1] = tanhTab[(i << 1) + 3] - tanhTab[(i << 1) + 1];
         }
         int lasty = (int) ((1 << 24) * y + 0.5);
-        tanhtab[(TANH_N_SAMPLES << 1) - 2] = lasty - tanhtab[(TANH_N_SAMPLES << 1) - 1];
+        tanhTab[(TANH_N_SAMPLES << 1) - 2] = lasty - tanhTab[(TANH_N_SAMPLES << 1) - 1];
     }
 
     public static int lookup(int x) {
@@ -88,11 +88,11 @@ class Tanh {
             return signum ^ ((1 << 24) - 2 * Exp2.lookup(sx));
         } else {
             final int SHIFT = 26 - TANH_LG_N_SAMPLES;
-            int lowbits = x & ((1 << SHIFT) - 1);
-            int x_int = (x >> (SHIFT - 1)) & ((TANH_N_SAMPLES - 1) << 1);
-            int dy = tanhtab[x_int];
-            int y0 = tanhtab[x_int + 1];
-            int y = (int) (y0 + (((long) dy * (long) lowbits) >> SHIFT));
+            int lowBits = x & ((1 << SHIFT) - 1);
+            int xInt = (x >> (SHIFT - 1)) & ((TANH_N_SAMPLES - 1) << 1);
+            int dy = tanhTab[xInt];
+            int y0 = tanhTab[xInt + 1];
+            int y = (int) (y0 + (((long) dy * (long) lowBits) >> SHIFT));
             return y ^ signum;
         }
     }

@@ -56,7 +56,7 @@ class Dx7Test {
             }
         }
         Debug.println("Max error: " + maxerr);
-        assertEquals(25.8, maxerr, 0.1);
+        assertEquals(25.8, maxerr, 0.15);
     }
 
     @Test
@@ -86,7 +86,7 @@ class Dx7Test {
             int phase = random.nextInt() & 0xffffff;
             int gain = 1 << 24;
             int[] buf = new int[64];
-            FmOpKernel.compute_pure(buf, phase, freq, gain, gain, false);
+            FmOpKernel.computePure(buf, phase, freq, gain, gain, false);
             int maxerr = 0;
             for (int j = 0; j < 64; j++) {
                 double y = gain * Math.sin((phase + j * freq) * (2.0 * Math.PI / (1 << 24)));

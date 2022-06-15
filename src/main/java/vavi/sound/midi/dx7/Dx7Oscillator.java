@@ -37,13 +37,10 @@ public class Dx7Oscillator extends ModelAbstractOscillator {
         soundbank = new Dx7Soundbank();
     }
 
-    /** TODO not works as class field */
-    private Dx7 dx7;
+    /** */
+    private Dx7 dx7 = new Dx7();
 
     public Dx7 getDx7() {
-        if (dx7 == null) {
-            dx7 = new Dx7();
-        }
         return dx7;
     }
 
@@ -54,15 +51,12 @@ public class Dx7Oscillator extends ModelAbstractOscillator {
     @Override
     public void init() {
 //Debug.println("init");
-        if (dx7 == null) {
-            dx7 = new Dx7();
-        }
         super.init();
     }
 
     @Override
     public void setSampleRate(float sampleRate) {
-        Dx7.setSampleRate(sampleRate);
+        dx7.setSampleRate(sampleRate);
         super.setSampleRate(sampleRate);
     }
 
@@ -124,9 +118,7 @@ try {
             buffer[offset + i] = extraBuf[i];
         }
         if (extraBufSize > len) {
-            for (int j = 0; j < extraBufSize - len; j++) {
-                extraBuf[j] = extraBuf[j + len];
-            }
+            System.arraycopy(extraBuf, len, extraBuf, 0, extraBufSize - len);
             extraBufSize -= len;
             return len;
         }

@@ -9,10 +9,8 @@ package vavi.sound.midi.dx7;
 import java.util.ArrayList;
 import java.util.List;
 
-import vavi.sound.dx7.Freqlut;
-import vavi.sound.dx7.Lfo;
+import vavi.sound.dx7.Context;
 import vavi.sound.dx7.Note;
-import vavi.sound.dx7.PitchEnv;
 import vavi.sound.dx7.ResoFilter;
 import vavi.util.Debug;
 
@@ -27,24 +25,22 @@ class Dx7 {
     static final int BUFFER_SIZE = Note.N;
 
     private static class ActiveNote {
-        boolean keydown;
+        boolean keyDown;
         // TODO should be use the value in SoftVoice?
         boolean sustained;
         Note note;
     }
 
-    // The original DX7 had one single LFO. Later units had an LFO per note.
-    private Lfo lfo = new Lfo();
-
     // in MIDI units (0x4000 is neutral)
     private Note.Controllers controllers;
 
-    private ResoFilter filter = new ResoFilter();
+    private ResoFilter filter;
 
     private int[] filterControl = new int[3];
 
     // TODO should be use the value in SoftVoice?
     private boolean sustain;
+
 
     Dx7() {
         filterControl[0] = 258847126;
@@ -54,15 +50,16 @@ class Dx7 {
         controllers = new Note.Controllers(0x2000);
     }
 
-    private static float sampleRate = -1;
+    private Context context = null;
 
-    static void setSampleRate(float sampleRate) {
-        if (Dx7.sampleRate != sampleRate) {
+    void setSampleRate(float sampleRate) {
+        if (this.context == null) {
+            this.context = Context.getInstance(sampleRate);
+            filter = new ResoFilter(context);
+        }
+        if (this.context.sampleRate != sampleRate) {
 Debug.println("sampleRate: " + sampleRate);
-            Freqlut.init(sampleRate);
-            Lfo.init(sampleRate);
-            PitchEnv.init(sampleRate);
-            Dx7.sampleRate = sampleRate;
+            this.context.setSampleRate(sampleRate);
         }
     }
 
@@ -74,21 +71,21 @@ Debug.println("sampleRate: " + sampleRate);
     private int[] audioBuf2 = new int[BUFFER_SIZE];
 
     void write(int offset, int len, int i, float[] buffer, float[] extraBuf) {
-        int lfoValue = lfo.getsample();
-        int lfoDelay = lfo.getdelay();
+        int lfoValue = context.lfo.getSample();
+        int lfoDelay = context.lfo.getDelay();
         activeNote.note.compute(audioBuf, lfoValue, lfoDelay, controllers);
-//        activeNote.dx7_note.compute(audiobuf, 0, 0, controllers_);
+//        activeNote.note.compute(audioBuf, 0, 0, controllers);
         final int[][] bufs = { audioBuf };
         int[][] bufs2 = { audioBuf2 };
         filter.process(bufs, filterControl, filterControl, bufs2);
         int jmax = len - i;
         for (int j = 0; j < Note.N; j++) {
             int val = audioBuf2[j] >> 4;
-//            int val = audiobuf[j] >> 4;
-            int clip_val = val < -(1 << 24) ? 0x8000 : val >= (1 << 24) ? 0x7fff : val >> 9;
+//            int val = audioBuf[j] >> 4;
+            int clipVal = val < -(1 << 24) ? 0x8000 : val >= (1 << 24) ? 0x7fff : val >> 9;
             // TODO: maybe some dithering?
             float f;
-            int x = clip_val;
+            int x = clipVal;
             f = ((float) x) / (float) 0x8000;
             if (f > 1) {
                 f = 1;
@@ -105,23 +102,23 @@ Debug.println("sampleRate: " + sampleRate);
     }
 
     void noteOn(byte[] patch, int noteNumber, int velocity) {
-        lfo.keydown();
+        context.lfo.keyDown();
         activeNote = new Dx7.ActiveNote();
-        activeNote.keydown = true;
+        activeNote.keyDown = true;
         activeNote.sustained = sustain;
-        activeNote.note = new Note(patch, noteNumber, velocity);
+        activeNote.note = new Note(context, patch, noteNumber, velocity);
         activeNotes.add(activeNote);
     }
 
     void noteOff() {
-        if (activeNote.keydown) {
+        if (activeNote.keyDown) {
             if (sustain) {
                 activeNote.sustained = true;
             } else {
-                activeNote.note.keyup();
+                activeNote.note.keyUp();
                 activeNotes.remove(activeNote);
             }
-            activeNote.keydown = false;
+            activeNote.keyDown = false;
         }
     }
 
@@ -129,7 +126,7 @@ Debug.println("sampleRate: " + sampleRate);
         // TODO location
         byte[] b = Dx7Soundbank.getDirectBuffer(p);
         System.arraycopy(patch, ofs, b, 0, b.length);
-        lfo.reset(b, 137);
+        context.lfo.reset(b, 137);
 
 Debug.println("Loaded patch " + p + ": " + new String(b, 145, 10));
     }
@@ -156,8 +153,8 @@ Debug.println("control change: " + controller + ", " + value);
             sustain = value != 0;
             if (!sustain) {
                 for (ActiveNote activeNote : activeNotes) {
-                    if (activeNote.sustained && !activeNote.keydown) {
-                        activeNote.note.keyup();
+                    if (activeNote.sustained && !activeNote.keyDown) {
+                        activeNote.note.keyUp();
                         activeNote.sustained = false;
                         activeNotes.remove(activeNote);
                     }
@@ -166,7 +163,7 @@ Debug.println("control change: " + controller + ", " + value);
 Debug.println("control change: " + controller + ", " + value);
             break;
         }
-        controllers.values_[controller] = value;
+        controllers.values[controller] = value;
     }
 }
 

@@ -19,102 +19,102 @@ package vavi.sound.dx7;
 
 class Env {
 
-    private int[] rates_ = new int[4];
-    private int[] levels_ = new int[4];
-    private int outlevel_;
-    private int rate_scaling_;
+    private int[] rates = new int[4];
+    private int[] levels = new int[4];
+    private int outLevel;
+    private int rateScaling;
     // Level is stored so that 2^24 is one doubling, ie 16 more bits than
     // the DX7 itself (fraction is stored in level rather than separate
     // counter)
-    private int level_;
-    private int targetlevel_;
-    private boolean rising_;
-    private int ix_;
-    private int inc_;
+    private int level;
+    private int targetLevel;
+    private boolean rising;
+    private int ix;
+    private int inc;
 
-    private boolean down_;
+    private boolean down;
 
-    Env(final int[] r, final int[] l, int ol, int rate_scaling) {
+    Env(final int[] r, final int[] l, int ol, int rateScaling) {
         for (int i = 0; i < 4; i++) {
-            rates_[i] = r[i];
-            levels_[i] = l[i];
+            rates[i] = r[i];
+            levels[i] = l[i];
         }
-        outlevel_ = ol;
-        rate_scaling_ = rate_scaling;
-        level_ = 0;
-        down_ = true;
+        outLevel = ol;
+        this.rateScaling = rateScaling;
+        level = 0;
+        down = true;
         advance(0);
     }
 
-    int getsample() {
-        if (ix_ < 3 || (ix_ < 4) && !down_) {
-            if (rising_) {
-                final int jumptarget = 1716;
-                if (level_ < (jumptarget << 16)) {
-                    level_ = jumptarget << 16;
+    int getSample() {
+        if (ix < 3 || (ix < 4) && !down) {
+            if (rising) {
+                final int jumpTarget = 1716;
+                if (level < (jumpTarget << 16)) {
+                    level = jumpTarget << 16;
                 }
-                level_ += (((17 << 24) - level_) >> 24) * inc_;
+                level += (((17 << 24) - level) >> 24) * inc;
                 // TODO: should probably be more accurate when inc is large
-                if (level_ >= targetlevel_) {
-                    level_ = targetlevel_;
-                    advance(ix_ + 1);
+                if (level >= targetLevel) {
+                    level = targetLevel;
+                    advance(ix + 1);
                 }
             } else { // !rising
-                level_ -= inc_;
-                if (level_ <= targetlevel_) {
-                    level_ = targetlevel_;
-                    advance(ix_ + 1);
+                level -= inc;
+                if (level <= targetLevel) {
+                    level = targetLevel;
+                    advance(ix + 1);
                 }
             }
         }
         // TODO: this would be a good place to set level to 0 when under
         // threshold
-        return level_;
+        return level;
     }
 
-    void keydown(boolean d) {
-        if (down_ != d) {
-            down_ = d;
+    void keyDown(boolean d) {
+        if (down != d) {
+            down = d;
             advance(d ? 0 : 3);
         }
     }
 
-    void setparam(int param, int value) {
+    void setParam(int param, int value) {
         if (param < 4) {
-            rates_[param] = value;
+            rates[param] = value;
         } else if (param < 8) {
-            levels_[param - 4] = value;
+            levels[param - 4] = value;
         }
         // Unknown parameter, ignore for now
     }
 
-    private static final int levellut[] = {
+    private static final int[] levelLut = {
         0, 5, 9, 13, 17, 20, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 42, 43, 45, 46
     };
 
-    public static int scaleoutlevel(int outlevel) {
-        return outlevel >= 20 ? 28 + outlevel : levellut[outlevel];
+    public static int scaleOutLevel(int outLevel) {
+        return outLevel >= 20 ? 28 + outLevel : levelLut[outLevel];
     }
 
-    void advance(int newix) {
-        ix_ = newix;
-        if (ix_ < 4) {
-            int newlevel = levels_[ix_];
-            int actuallevel = scaleoutlevel(newlevel) >> 1;
+    void advance(int newIx) {
+        ix = newIx;
+        if (ix < 4) {
+            int newLevel = levels[ix];
+            int actualLevel = scaleOutLevel(newLevel) >> 1;
 
-            actuallevel = (actuallevel << 6) + outlevel_ - 4256;
-            actuallevel = actuallevel < 16 ? 16 : actuallevel;
+            actualLevel = (actualLevel << 6) + outLevel - 4256;
+            actualLevel = Math.max(actualLevel, 16);
             // level here is same as Java impl
-            targetlevel_ = actuallevel << 16;
-            rising_ = (targetlevel_ > level_);
+            targetLevel = actualLevel << 16;
+            rising = (targetLevel > level);
 
             // rate
 
-            int qrate = (rates_[ix_] * 41) >> 6;
+            int qRate = (rates[ix] * 41) >> 6;
 
-            qrate += rate_scaling_;
-            qrate = Math.min(qrate, 63);
-            inc_ = (4 + (qrate & 3)) << (2 + Note.LG_N + (qrate >> 2));
+            qRate += rateScaling;
+            qRate = Math.min(qRate, 63);
+            inc = (4 + (qRate & 3)) << (2 + Note.LG_N + (qRate >> 2));
         }
     }
 }

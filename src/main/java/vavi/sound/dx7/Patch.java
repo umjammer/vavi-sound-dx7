@@ -28,30 +28,30 @@ class Patch {
         for (int op = 0; op < 6; op++) {
             // eg rate and level, brk pt, depth, scaling
             System.arraycopy(bulk, op * 17, patch, op * 21, 11);
-            byte leftrightcurves = bulk[op * 17 + 11];
-            patch[op * 21 + 11] = (byte) (leftrightcurves & 3);
-            patch[op * 21 + 12] = (byte) ((leftrightcurves >> 2) & 3);
-            byte detune_rs = bulk[op * 17 + 12];
-            patch[op * 21 + 13] = (byte) (detune_rs & 7);
-            patch[op * 21 + 20] = (byte) (detune_rs >> 3);
-            byte kvs_ams = bulk[op * 17 + 13];
-            patch[op * 21 + 14] = (byte) (kvs_ams & 3);
-            patch[op * 21 + 15] = (byte) (kvs_ams >> 2);
+            byte leftRightCurves = bulk[op * 17 + 11];
+            patch[op * 21 + 11] = (byte) (leftRightCurves & 3);
+            patch[op * 21 + 12] = (byte) ((leftRightCurves >> 2) & 3);
+            byte detuneRs = bulk[op * 17 + 12];
+            patch[op * 21 + 13] = (byte) (detuneRs & 7);
+            patch[op * 21 + 20] = (byte) (detuneRs >> 3);
+            byte kvsAms = bulk[op * 17 + 13];
+            patch[op * 21 + 14] = (byte) (kvsAms & 3);
+            patch[op * 21 + 15] = (byte) (kvsAms >> 2);
             patch[op * 21 + 16] = bulk[op * 17 + 14]; // output level
-            byte fcoarse_mode = bulk[op * 17 + 15];
-            patch[op * 21 + 17] = (byte) (fcoarse_mode & 1);
-            patch[op * 21 + 18] = (byte) (fcoarse_mode >> 1);
+            byte fCoarseMode = bulk[op * 17 + 15];
+            patch[op * 21 + 17] = (byte) (fCoarseMode & 1);
+            patch[op * 21 + 18] = (byte) (fCoarseMode >> 1);
             patch[op * 21 + 19] = bulk[op * 17 + 16]; // fine freq
         }
         System.arraycopy(bulk, 102, patch, 126, 9); // pitch env, algo
-        byte oks_fb = bulk[111];
-        patch[135] = (byte) (oks_fb & 7);
-        patch[136] = (byte) (oks_fb >> 3);
+        byte oksFb = bulk[111];
+        patch[135] = (byte) (oksFb & 7);
+        patch[136] = (byte) (oksFb >> 3);
         System.arraycopy(bulk, 112, patch, 137, 4); // lfo
-        byte lpms_lfw_lks = bulk[116];
-        patch[141] = (byte) (lpms_lfw_lks & 1);
-        patch[142] = (byte) ((lpms_lfw_lks >> 1) & 7);
-        patch[143] = (byte) (lpms_lfw_lks >> 4);
+        byte lpmsLfwLks = bulk[116];
+        patch[141] = (byte) (lpmsLfwLks & 1);
+        patch[142] = (byte) ((lpmsLfwLks >> 1) & 7);
+        patch[143] = (byte) (lpmsLfwLks >> 4);
         System.arraycopy(bulk, 117, patch, 144, 11); // transpose, name
         patch[155] = 0x3f; // operator on/off
 
@@ -61,12 +61,12 @@ class Patch {
 
     private static int clamped = 0; // not thread safe
 
-    private static int file_clamped = 0; // not thread safe
+    private static int fileClamped = 0; // not thread safe
 
     private static byte clamp(byte byte_, int pos, byte max) {
         if (byte_ > max || byte_ < 0) {
             clamped++;
-            Debug.printf("file %d clamped %d pos %d was %d is %d\n", file_clamped, clamped, pos, byte_, max);
+            Debug.printf("file %d clamped %d pos %d was %d is %d\n", fileClamped, clamped, pos, byte_, max);
             return max;
         }
         return byte_;
@@ -95,7 +95,7 @@ class Patch {
             patch[i] = clamp(patch[i], i, max[i]);
         }
         if (clamped != 0)
-            file_clamped++;
+            fileClamped++;
         clamped = 0;
     }
 }

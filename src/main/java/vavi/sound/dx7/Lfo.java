@@ -17,95 +17,99 @@
 package vavi.sound.dx7;
 
 
+import java.util.HashMap;
+import java.util.Map;
+
+
 /**
  * Low frequency oscillator, compatible with DX7
  */
 public class Lfo {
 
-    private long phase_;  // Q32
-    private long delta_;
-    private byte waveform_;
-    private byte randstate_;
-    private boolean sync_;
+    private long phase; // Q32
+    private long delta;
+    private byte waveform;
+    private byte randState;
+    private boolean sync;
 
-    private long delaystate_;
-    private long delayinc_;
-    private long delayinc2_;
+    private long delayState;
+    private long delayInc;
+    private long delayInc2;
 
-    private static int unit_;
+    private static long unit;
 
-    public static void init(double sample_rate) {
-        // finalant is 1 << 32 / 15.5s / 11
-        unit_ = (int) (Note.N * 25190424 / sample_rate + 0.5);
+    Lfo(double sampleRate) {
+        // constant is 1 << 32 / 15.5s / 11
+        unit = (int) (Note.N * 25190424 / sampleRate + 0.5);
     }
 
     public void reset(final byte[] params, int ofs) {
         int rate = params[ofs + 0]; // 0..99
         int sr = rate == 0 ? 1 : (165 * rate) >> 6;
         sr *= sr < 160 ? 11 : (11 + ((sr - 160) >> 4));
-        delta_ = unit_ * sr;
+        delta = unit * sr;
         int a = 99 - params[ofs + 1]; // LFO delay
         if (a == 99) {
-            delayinc_ = ~0;
-            delayinc2_ = ~0;
+            delayInc = ~0;
+            delayInc2 = ~0;
         } else {
             a = (16 + (a & 15)) << (1 + (a >> 4));
-            delayinc_ = unit_ * a;
+            delayInc = unit * a;
             a &= 0xff80;
             a = Math.max(0x80, a);
-            delayinc2_ = unit_ * a;
+            delayInc2 = unit * a;
         }
-        waveform_ = params[ofs + 5];
-        sync_ = params[ofs + 4] != 0;
+        waveform = params[ofs + 5];
+        sync = params[ofs + 4] != 0;
     }
 
     // result is 0..1 in Q24
-    public int getsample() {
-        phase_ += delta_;
+    public int getSample() {
+        phase += delta;
         int x;
-        switch (waveform_) {
+        switch (waveform) {
         case 0: // triangle
-            x = (int) (phase_ >> 7);
-            x ^= -(phase_ >> 31);
+            x = (int) (phase >> 7);
+            x ^= -(phase >> 31);
             x &= (1 << 24) - 1;
             return x;
         case 1: // sawtooth down
-            return (int) ((~phase_ ^ (1 << 31)) >> 8);
+            return (int) ((~phase ^ (1 << 31)) >> 8);
         case 2: // sawtooth up
-            return (int) ((phase_ ^ (1 << 31)) >> 8);
+            return (int) ((phase ^ (1 << 31)) >> 8);
         case 3: // square
-            return (int) (((~phase_) >> 7) & (1 << 24));
+            return (int) (((~phase) >> 7) & (1 << 24));
         case 4: // sine
-            return (1 << 23) + (Sin.lookup((int) (phase_ >> 8)) >> 1);
+            return (1 << 23) + (Sin.lookup((int) (phase >> 8)) >> 1);
         case 5: // s&h
-            if (phase_ < delta_) {
-                randstate_ = (byte) ((randstate_ * 179 + 17) & 0xff);
+            if (phase < delta) {
+                randState = (byte) ((randState * 179 + 17) & 0xff);
             }
-            x = randstate_ ^ 0x80;
+            x = randState ^ 0x80;
             return (x + 1) << 16;
         }
         return 1 << 23;
     }
 
     // result is 0..1 in Q24
-    public int getdelay() {
-        int delta = (int) (delaystate_ < (1 << 31) ? delayinc_ : delayinc2_);
-        int d = (int) (delaystate_ + delta);
-        if (d < delayinc_) {
+    public int getDelay() {
+        long delta = (delayState < (1L << 31) ? delayInc : delayInc2);
+        long d = delayState + delta;
+        if (d < delayInc) {
             return 1 << 24;
         }
-        delaystate_ = d;
-        if (d < (1 << 31)) {
+        delayState = d;
+        if (d < (1L << 31)) {
             return 0;
         } else {
-            return (d >> 7) & ((1 << 24) - 1);
+            return (int) ((d >> 7) & ((1 << 24) - 1));
         }
     }
 
-    public void keydown() {
-        if (sync_) {
-            phase_ = (1 << 31) - 1;
+    public void keyDown() {
+        if (sync) {
+            phase = (1L << 31) - 1;
         }
-        delaystate_ = 0;
+        delayState = 0;
     }
 }

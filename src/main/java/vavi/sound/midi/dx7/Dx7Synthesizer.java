@@ -8,8 +8,10 @@ package vavi.sound.midi.dx7;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 import javax.sound.midi.Instrument;
+import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiDevice;
 import javax.sound.midi.MidiMessage;
@@ -46,10 +48,11 @@ public class Dx7Synthesizer implements Synthesizer {
     /** the device information */
     protected static final MidiDevice.Info info =
         new MidiDevice.Info("DX7 MIDI Synthesizer",
-                            "Vavisoft",
+                            "vavi",
                             "Software synthesizer for DX7",
                             "Version " + version) {};
 
+    /** required gervill */
     private Synthesizer synthesizer;
 
     private Dx7Oscillator dx7Oscillator;
@@ -75,7 +78,11 @@ Debug.println("wrapped synthesizer: " + synthesizer.getClass().getName());
 
     @Override
     public boolean isOpen() {
-        return synthesizer.isOpen();
+        if (synthesizer != null) {
+            return synthesizer.isOpen();
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -225,21 +232,43 @@ try {
             } else if (message instanceof SysexMessage) {
                 SysexMessage sysexMessage = (SysexMessage) message;
                 byte[] data = sysexMessage.getData();
-//Debug.print("sysex:\n" + StringUtil.getDump(data));
 //Debug.printf(Level.FINE, "sysex: %02x %02x %02x", data[1], data[2], data[3]);
-                if (data[0] == 0x43) {
-                    if (data[1] == 0x00 && data[2] == 0x09 && data[3] == 0x20 && data[4] == 0x00) {
-                        if (data.length > 4096) {
+
+Debug.printf(Level.FINE, "sysex: %02X\n%s", sysexMessage.getStatus(), StringUtil.getDump(data));
+                switch (data[0]) {
+                case 0x43: // Yamaha
+                    switch (data[1]) {
+                    case 0x00: //
+                        switch (data[2]) {
+                        case 0x09: //
+                            if (data[3] == 0x20 && data[4] == 0x00) { // 
 Debug.println("sysex: bank change?");
+                            }
+                            break;
+                        case 0x00: //
+                            if (data[3] == 0x01 && data[4] == 0x1b) {
+                                dx7Oscillator.getDx7().programChange(0, data, 5);
+                            }
+                            break;
                         }
-                    } else if (data[1] == 0x00 && data[2] == 0x00 && data[3] == 0x01 && data[4] == 0x1b) {
-                        dx7Oscillator.getDx7().programChange(0, data, 5);
-                    } else {
-//                        Dx7Oscillator.getDx7().sysex(data);
+                        break;
                     }
-                } else {
-Debug.println("sysex\n" + StringUtil.getDump(data));
+                    break;
+                default:
+                    break;
                 }
+
+                receiver.send(sysexMessage, timeStamp);
+            } else if (message instanceof MetaMessage) {
+                MetaMessage metaMessage = (MetaMessage) message;
+Debug.printf("meta: %02x", metaMessage.getType());
+                switch (metaMessage.getType()) {
+                case 0x2f:
+                    break;
+                }
+                receiver.send(message, timeStamp);
+            } else {
+                assert false;
             }
 } catch (Throwable t) {
  t.printStackTrace();

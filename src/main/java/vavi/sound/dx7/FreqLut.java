@@ -17,22 +17,26 @@
 package vavi.sound.dx7;
 
 
+import java.util.HashMap;
+import java.util.Map;
+
+
 /**
  * Resolve frequency signal (1.0 in Q24 format = 1 octave) to phase delta.
  * <p>
  * The LUT is just a global, and we'll need the init function to be called before
  * use.
  */
-public class Freqlut {
+public class FreqLut {
     private static final int LG_N_SAMPLES = 10;
     private static final int N_SAMPLES = 1 << LG_N_SAMPLES;
     private static final int SAMPLE_SHIFT = 24 - LG_N_SAMPLES;
     private static final int MAX_LOGFREQ_INT = 20;
 
-    private static int[] lut = new int[N_SAMPLES + 1];
+    private int[] lut = new int[N_SAMPLES + 1];
 
-    public static void init(double sample_rate) {
-        double y = (1L << (24 + MAX_LOGFREQ_INT)) / sample_rate;
+    FreqLut(double sampleRate) {
+        double y = (1L << (24 + MAX_LOGFREQ_INT)) / sampleRate;
         double inc = Math.pow(2, 1.0 / N_SAMPLES);
         for (int i = 0; i < N_SAMPLES + 1; i++) {
             lut[i] = (int) Math.floor(y + 0.5);
@@ -40,16 +44,16 @@ public class Freqlut {
         }
     }
 
-    // Note: if logfreq is more than 20.0, the results will be inaccurate. However,
+    // Note: if logFreq is more than 20.0, the results will be inaccurate. However,
     // that will be many times the Nyquist rate.
-    public static int lookup(int logfreq) {
-        int ix = (logfreq & 0xffffff) >> SAMPLE_SHIFT;
+    public int lookup(int logFreq) {
+        int ix = (logFreq & 0xffffff) >> SAMPLE_SHIFT;
 
         int y0 = lut[ix];
         int y1 = lut[ix + 1];
-        int lowbits = logfreq & ((1 << SAMPLE_SHIFT) - 1);
-        int y = (int) (y0 + ((((long) (y1 - y0) * (long) lowbits)) >> SAMPLE_SHIFT));
-        int hibits = logfreq >> 24;
-        return y >> (MAX_LOGFREQ_INT - hibits);
+        int lowBits = logFreq & ((1 << SAMPLE_SHIFT) - 1);
+        int y = (int) (y0 + ((((long) (y1 - y0) * (long) lowBits)) >> SAMPLE_SHIFT));
+        int hiBits = logFreq >> 24;
+        return y >> (MAX_LOGFREQ_INT - hiBits);
     }
 }
