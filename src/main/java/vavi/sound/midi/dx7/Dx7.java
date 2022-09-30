@@ -41,7 +41,6 @@ class Dx7 {
     // TODO should be use the value in SoftVoice?
     private boolean sustain;
 
-
     Dx7() {
         filterControl[0] = 258847126;
         filterControl[1] = 0;
