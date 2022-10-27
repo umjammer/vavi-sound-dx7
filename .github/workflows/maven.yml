@@ -23,4 +23,6 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      run: |
+        wget -O src/test/resources/unpacked.bin https://github.com/bwhitman/learnfm/blob/f5415157c65b0298dad692e5e332c71644718e28/unpacked.bin?raw=true
+        mvn -B package --file pom.xml
