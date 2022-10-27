@@ -8,6 +8,7 @@ package vavi.sound.dx7;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,6 +28,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.SourceDataLine;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -38,6 +40,8 @@ import vavi.sound.midi.dx7.Dx7Soundbank;
 import vavi.sound.midi.dx7.Dx7Synthesizer;
 import vavi.util.Debug;
 import vavi.util.StringUtil;
+import vavi.util.properties.annotation.Property;
+import vavi.util.properties.annotation.PropsEntity;
 
 import static vavi.sound.SoundUtil.volume;
 import static vavi.sound.midi.MidiUtil.volume;
@@ -50,12 +54,27 @@ import static vavi.sound.midi.MidiUtil.volume;
  * @version 0.00 2020/10/30 umjammer initial version <br>
  */
 @SuppressWarnings("restriction")
+@PropsEntity(url = "file:local.properties")
 public class Dx7SynthesizerTest {
 
     static {
         System.setProperty("javax.sound.midi.Synthesizer", "#Gervill");
         System.setProperty("javax.sound.midi.Sequencer", "#Real Time Sequencer");
     }
+
+    static boolean localPropertiesExists() {
+        return Files.exists(Paths.get("local.properties"));
+    }
+
+    @BeforeEach
+    void setup() throws IOException {
+        if (localPropertiesExists()) {
+            PropsEntity.Util.bind(this);
+        }
+    }
+
+    @Property(name = "test.midi")
+    String midi = "src/test/resources/test.mid";
 
     @Test
     @DisplayName("directly")
@@ -70,14 +89,7 @@ Debug.println("sequencer: " + sequencer.getClass().getName());
         Receiver receiver = synthesizer.getReceiver();
         sequencer.getTransmitter().setReceiver(receiver);
 
-        String filename = "Games/Y's - Theme.mid";
-//        String filename = "Games/Puyopuyo - 08 STICKER OF PUYOPUYO.mid";
-//        String filename = "Games/リッジレーサー - Theme (GS).MID";
-//        String filename = "Games/Super Mario Bros 2.mid";
-//        String filename = "test.mid";
-
-        Path file = Paths.get(System.getProperty("gdrive.home"), "/Music/midi/", filename);
-//        Path file = Paths.get("src/test/resources/", filename);
+        Path file = Paths.get(midi);
 
         Sequence seq = MidiSystem.getSequence(new BufferedInputStream(Files.newInputStream(file)));
 
@@ -95,7 +107,13 @@ System.err.println("START");
 
         volume(receiver, .5f); // gervill volume works!
 
+if (!System.getProperty("vavi.test", "").equals("ide")) {
+ Thread.sleep(10 * 1000);
+ sequencer.stop();
+ Debug.println("STOP");
+} else {
         countDownLatch.await();
+}
 System.err.println("END");
         sequencer.removeMetaEventListener(mel);
         sequencer.close();
@@ -143,15 +161,7 @@ Debug.println("synthesizer: " + synthesizer.getClass().getName());
         synthesizer.unloadAllInstruments(synthesizer.getDefaultSoundbank());
         synthesizer.loadAllInstruments(new Dx7Oscillator());
 
-//        String filename = "../../src/sano-n/vavi-apps-dx7/tmp/midi/minute_waltz.mid";
-//        String filename = "1/title-screen.mid";
-//        String filename = "1/overworld.mid";
-//        String filename = "1/m0057_01.mid";
-//        String filename = "1/ac4br_gm.MID";
-        String filename = "test.mid";
-
-//        Path file = Paths.get(System.getProperty("gdrive.home"), "/Music/midi/", filename);
-        Path file = Paths.get("src/test/resources/", filename);
+        Path file = Paths.get(midi);
 
         Sequence seq = MidiSystem.getSequence(new BufferedInputStream(Files.newInputStream(file)));
 
@@ -173,9 +183,15 @@ System.err.println("META: " + meta.getType());
 System.err.println("START");
         sequencer.start();
 
-        volume(receiver, .2f); // gervill volume works!
+        volume(receiver, .5f); // gervill volume works!
 
+if (!System.getProperty("vavi.test", "").equals("ide")) {
+ Thread.sleep(10 * 1000);
+ sequencer.stop();
+ Debug.println("STOP");
+} else {
         countDownLatch.await();
+}
 System.err.println("END");
         sequencer.removeMetaEventListener(mel);
 

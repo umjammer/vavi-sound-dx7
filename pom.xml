@@ -24,7 +24,6 @@
         <configuration>
           <argLine>
             -Djava.util.logging.config.file=${project.build.testOutputDirectory}/logging.properties
-            -Dgdrive.home="/Volumes/GoogleDrive/My Drive"
           </argLine>
           <trimStackTrace>false</trimStackTrace>
         </configuration>
