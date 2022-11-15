@@ -15,14 +15,21 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up JDK 1.8
-      uses: actions/setup-java@v3
-      with:
-        java-version: '8'
-        distribution: 'temurin'
-        cache: maven
-    - name: Build with Maven
-      run: |
-        wget -O src/test/resources/unpacked.bin https://github.com/bwhitman/learnfm/blob/f5415157c65b0298dad692e5e332c71644718e28/unpacked.bin?raw=true
-        mvn -B package --file pom.xml
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Check w/o SNAPSHOT when "bump version"
+        if: ${{ contains(github.event.head_commit.message, 'bump version') }}
+        run: grep "<version>" pom.xml | head -1 | grep -v SNAPSHOT
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven
+        run: |
+          wget -O src/test/resources/unpacked.bin https://github.com/bwhitman/learnfm/blob/f5415157c65b0298dad692e5e332c71644718e28/unpacked.bin?raw=true
+          mvn -B package --file pom.xml
