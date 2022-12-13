@@ -113,7 +113,7 @@ public class FilerTest {
 //        }
 //    }
 
-    void scalarBiQuad(final float[] inp, float[] out, int n, float b0, float b1, float b2, float a1, float a2) {
+    void scalarBiQuad(float[] inp, float[] out, int n, float b0, float b1, float b2, float a1, float a2) {
         float x1 = 0, x2 = 0, y1 = 0, y2 = 0;
         for (int i = 0; i < n; i++) {
             float x = inp[i];

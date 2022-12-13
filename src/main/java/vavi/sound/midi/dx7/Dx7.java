@@ -74,7 +74,7 @@ Debug.println("sampleRate: " + sampleRate);
         int lfoDelay = context.lfo.getDelay();
         activeNote.note.compute(audioBuf, lfoValue, lfoDelay, controllers);
 //        activeNote.note.compute(audioBuf, 0, 0, controllers);
-        final int[][] bufs = { audioBuf };
+        int[][] bufs = { audioBuf };
         int[][] bufs2 = { audioBuf2 };
         filter.process(bufs, filterControl, filterControl, bufs2);
         int jmax = len - i;

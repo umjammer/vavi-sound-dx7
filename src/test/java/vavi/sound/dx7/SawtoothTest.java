@@ -48,11 +48,11 @@ class SawtoothTest {
         double f0 = ramp * (64 + 1);
         control[0] = (int) ((1 << 24) * Math.log(f0 * sampleRate) / Math.log(2));
 
-        AudioFormat audioFormat = new AudioFormat((float) sampleRate, 16, 1, true, false);
+        AudioFormat audioFormat = new AudioFormat(sampleRate, 16, 1, true, false);
         DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, audioFormat, AudioSystem.NOT_SPECIFIED);
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
 //        CountDownLatch cdl = new CountDownLatch(1);
-        line.addLineListener(event -> { Debug.println(event.getType()); });
+        line.addLineListener(event -> Debug.println(event.getType()));
         line.open();
         volume(line, .2d);
         line.start();
@@ -87,7 +87,7 @@ class SawtoothTest {
 
     static byte[] sampleBuf = new byte[128];
 
-    static void writeData(SourceDataLine line, final int[] buf, int n) {
+    static void writeData(SourceDataLine line, int[] buf, int n) {
         int delta = 0x100;
         for (int i = 0; i < n; i++) {
             int val = buf[i];

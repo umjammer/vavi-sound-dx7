@@ -34,7 +34,7 @@ class Env {
 
     private boolean down;
 
-    Env(final int[] r, final int[] l, int ol, int rateScaling) {
+    Env(int[] r, int[] l, int ol, int rateScaling) {
         for (int i = 0; i < 4; i++) {
             rates[i] = r[i];
             levels[i] = l[i];

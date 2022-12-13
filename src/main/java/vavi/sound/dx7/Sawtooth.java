@@ -82,7 +82,7 @@ class Sawtooth {
                 int maxErr = 0;
                 double dsD = (1 << 30) * scale * Math.sin(dPhase);
                 double cm2D = (1 << 29) * (2 * (Math.cos(dPhase) - 1));
-                int dShift = 0;
+                int dShift;
                 for (dShift = 0; dShift < 16; dShift++) {
                     if (dsD < -(1 << (30 - dShift)))
                         break;
@@ -151,7 +151,7 @@ class Sawtooth {
         return (int) (y4 + ((((long) (y5 - y4) * (long) sliceLowBits)) >> (SLICE_SHIFT - SLICE_EXTRA)));
     }
 
-    public void process(final int[][] inBufs, final int[] controlIn, final int[] controlLast, int[][] outBufs) {
+    public void process(int[][] inBufs, int[] controlIn, int[] controlLast, int[][] outBufs) {
         int logf = controlLast[0];
         int[] oBuf = outBufs[0];
         int actualLogF = logf + sawToothFreqOff;

@@ -217,7 +217,7 @@ Debug.println(instrument.getName());
         AudioFormat audioFormat = new AudioFormat(sampleRate, 16, 1, true, false);
         DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, audioFormat, AudioSystem.NOT_SPECIFIED);
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
-        line.addLineListener(event -> { Debug.println(event.getType()); });
+        line.addLineListener(event -> Debug.println(event.getType()));
         line.open();
         volume(line, .2d);
         line.start();
@@ -248,7 +248,7 @@ Debug.println("drum: " + m);
             int lfoValue = context.lfo.getSample();
             int lfoDelay = context.lfo.getDelay();
             note.compute(buf, lfoValue, lfoDelay, controllers);
-            final int[][] bufs = { buf };
+            int[][] bufs = { buf };
             int[][] bufs2 = { buf2 };
             filter.process(bufs, filterControl, filterControl, bufs2);
             for (int j = 0; j < Note.N; j++) {
@@ -269,7 +269,7 @@ Debug.println("drum: " + m);
         AudioFormat audioFormat = new AudioFormat(sampleRate, 16, 1, true, false);
         DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, audioFormat, AudioSystem.NOT_SPECIFIED);
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
-        line.addLineListener(event -> { Debug.println(event.getType()); });
+        line.addLineListener(event -> Debug.println(event.getType()));
         line.open();
         volume(line, .2d);
         line.start();
@@ -301,7 +301,7 @@ Debug.println(m + ": " + instruments[m].getName());
             int lfoValue = context.lfo.getSample();
             int lfoDelay = context.lfo.getDelay();
             note.compute(buf, lfoValue, lfoDelay, controllers);
-            final int[][] bufs = { buf };
+            int[][] bufs = { buf };
             int[][] bufs2 = { buf2 };
             filter.process(bufs, filterControl, filterControl, bufs2);
             for (int j = 0; j < Note.N; j++) {
@@ -331,7 +331,7 @@ Debug.println("patchs: " + n);
         AudioFormat audioFormat = new AudioFormat(sampleRate, 16, 1, true, false);
         DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, audioFormat, AudioSystem.NOT_SPECIFIED);
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
-        line.addLineListener(event -> { Debug.println(event.getType()); });
+        line.addLineListener(event -> Debug.println(event.getType()));
         line.open();
         volume(line, .2d);
         line.start();
@@ -368,7 +368,7 @@ Debug.println(x.length + "\n" + StringUtil.getDump(x));
             int lfoDelay = context.lfo.getDelay();
             note.compute(buf, lfoValue, lfoDelay, controllers);
 //            note.compute(buf, 0, 0, controllers);
-            final int[][] bufs = { buf };
+            int[][] bufs = { buf };
             int[][] bufs2 = { buf2 };
             filter.process(bufs, filterControl, filterControl, bufs2);
             for (int j = 0; j < Note.N; j++) {
@@ -384,7 +384,7 @@ Debug.println(x.length + "\n" + StringUtil.getDump(x));
 
     static byte[] sample_buf = new byte[128];
 
-    static void writeData(SourceDataLine line, final int[] buf, int n) {
+    static void writeData(SourceDataLine line, int[] buf, int n) {
         int delta = 0x100;
         for (int i = 0; i < n; i++) {
             int val = buf[i];

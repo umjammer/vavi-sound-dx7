@@ -206,7 +206,7 @@ Debug.println("allocateNote: max");
 //                    activeNote[note].dx7Note.compute(audioBuf, 0, 0, controllers);
                 }
             }
-            final int[][] bufs = { audioBuf };
+            int[][] bufs = { audioBuf };
             int[][] bufs2 = { audioBuf2 };
             filter.process(bufs, filterControl, filterControl, bufs2);
             int jmax = nSamples - i;

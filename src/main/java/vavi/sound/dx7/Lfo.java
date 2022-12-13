@@ -17,10 +17,6 @@
 package vavi.sound.dx7;
 
 
-import java.util.HashMap;
-import java.util.Map;
-
-
 /**
  * Low frequency oscillator, compatible with DX7
  */
@@ -43,7 +39,7 @@ public class Lfo {
         unit = (int) (Note.N * 25190424 / sampleRate + 0.5);
     }
 
-    public void reset(final byte[] params, int ofs) {
+    public void reset(byte[] params, int ofs) {
         int rate = params[ofs + 0]; // 0..99
         int sr = rate == 0 ? 1 : (165 * rate) >> 6;
         sr *= sr < 160 ? 11 : (11 + ((sr - 160) >> 4));

@@ -17,10 +17,6 @@
 package vavi.sound.dx7;
 
 
-import java.util.HashMap;
-import java.util.Map;
-
-
 /**
  * Resolve frequency signal (1.0 in Q24 format = 1 octave) to phase delta.
  * <p>

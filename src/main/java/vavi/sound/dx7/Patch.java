@@ -24,7 +24,7 @@ import vavi.util.Debug;
  */
 class Patch {
 
-    public static void unpackPatch(final byte[] bulk, byte[] patch) {
+    public static void unpackPatch(byte[] bulk, byte[] patch) {
         for (int op = 0; op < 6; op++) {
             // eg rate and level, brk pt, depth, scaling
             System.arraycopy(bulk, op * 17, patch, op * 21, 11);

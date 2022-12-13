@@ -131,7 +131,7 @@ Debug.println("patchs: " + n);
 
     @Override
     public Instrument[] getInstruments() {
-        return instruments.values().stream().toArray(Instrument[]::new);
+        return instruments.values().toArray(new Instrument[0]);
     }
 
     private Map<String, Instrument> emergencies = new HashMap<>();

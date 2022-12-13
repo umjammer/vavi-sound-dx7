@@ -17,10 +17,6 @@
 package vavi.sound.dx7;
 
 
-import java.util.HashMap;
-import java.util.Map;
-
-
 public class PitchEnv {
 
     private int[] rates = new int[4];
@@ -53,7 +49,7 @@ public class PitchEnv {
         30, 31, 32, 33, 34, 35, 38, 40, 43, 46, 49, 53, 58, 65, 73, 82, 92, 103, 115, 127
     };
 
-    public void set(final int[] r, final int[] l) {
+    public void set(int[] r, int[] l) {
         for (int i = 0; i < 4; i++) {
             rates[i] = r[i];
             levels[i] = l[i];

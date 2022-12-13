@@ -28,7 +28,7 @@ class FmCore {
     public static class FmOperatorInfo {
         int in;
         int out;
-    };
+    }
 
     private static final int OUT_BUS_ONE = 1 << 0;
     private static final int OUT_BUS_TWO = 1 << 1;
@@ -83,7 +83,7 @@ class FmCore {
         new FmAlgorithm(0xc4, 0x04, 0x04, 0x04, 0x04, 0x04), // 32
     };
 
-    private int n_out(final FmAlgorithm alg) {
+    private int n_out(FmAlgorithm alg) {
         int count = 0;
         for (int i = 0; i < 6; i++) {
             if ((alg.ops[i] & 7) == OUT_BUS_ADD)
@@ -96,7 +96,7 @@ class FmCore {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 32; i++) {
             sb.append(i + 1).append(":");
-            final FmAlgorithm alg = algorithms[i];
+            FmAlgorithm alg = algorithms[i];
             for (int j = 0; j < 6; j++) {
                 int flags = alg.ops[j];
                 sb.append(" ");
@@ -117,7 +117,7 @@ class FmCore {
 
     public void compute(int[] output, FmOpParams[] params, int algorithm, int[] fbBuf, int feedbackShift) {
         final int kLevelThresh = 1120;
-        final FmAlgorithm alg = algorithms[algorithm];
+        FmAlgorithm alg = algorithms[algorithm];
         boolean[] hasContents = {
             true, false, false
         };

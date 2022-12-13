@@ -133,7 +133,7 @@ public class Note {
         0, 10, 20, 33, 55, 92, 153, 255
     };
 
-    public Note(Context context, final byte[] patch, int midiNote, int velocity) {
+    public Note(Context context, byte[] patch, int midiNote, int velocity) {
         this.context = context;
         int[] rates = new int[4];
         int[] levels = new int[4];
@@ -199,7 +199,7 @@ public class Note {
         }
     }
 
-    public void compute(int[] buf, int lfoVal, int lfoDelay, final Controllers ctrls) {
+    public void compute(int[] buf, int lfoVal, int lfoDelay, Controllers ctrls) {
         int pitchMod = context.pitchEnv.getSample();
         long pmd = (long) pitchModDepth * lfoDelay; // Q32
         // TODO: add modulation sources (mod wheel, etc)

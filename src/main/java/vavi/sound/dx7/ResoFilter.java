@@ -47,7 +47,7 @@ public class ResoFilter {
 
     // Some really generic 4x4 matrix multiplication operations, suitable
     // for NEON'ing
-    private static void matMult4(float[] dst, int dP, final float[] a, int aP, final float[] b, int bP) {
+    private static void matMult4(float[] dst, int dP, float[] a, int aP, float[] b, int bP) {
         dst[dP + 0] = a[aP + 0] * b[bP + 0] + a[aP + 4] * b[bP + 1] + a[aP + 8] * b[bP + 2] + a[aP + 12] * b[bP + 3];
         dst[dP + 1] = a[aP + 1] * b[bP + 0] + a[aP + 5] * b[bP + 1] + a[aP + 9] * b[bP + 2] + a[aP + 13] * b[bP + 3];
         dst[dP + 2] = a[aP + 2] * b[bP + 0] + a[aP + 6] * b[bP + 1] + a[aP + 10] * b[bP + 2] + a[aP + 14] * b[bP + 3];
@@ -66,27 +66,27 @@ public class ResoFilter {
         dst[dP + 15] = a[aP + 3] * b[bP + 12] + a[aP + 7] * b[bP + 13] + a[aP + 11] * b[bP + 14] + a[aP + 15] * b[bP + 15];
     }
 
-    private static void matVec4(float[] dst, int dP, final float[] a, int aP, final float[] b, int bP) {
+    private static void matVec4(float[] dst, int dP, float[] a, int aP, float[] b, int bP) {
         dst[dP + 0] = a[aP + 0] * b[bP + 0] + a[aP + 4] * b[bP + 1] + a[aP + 8] * b[bP + 2] + a[aP + 12] * b[bP + 3];
         dst[dP + 1] = a[aP + 1] * b[bP + 0] + a[aP + 5] * b[bP + 1] + a[aP + 9] * b[bP + 2] + a[aP + 13] * b[bP + 3];
         dst[dP + 2] = a[aP + 2] * b[bP + 0] + a[aP + 6] * b[bP + 1] + a[aP + 10] * b[bP + 2] + a[aP + 14] * b[bP + 3];
         dst[dP + 3] = a[aP + 3] * b[bP + 0] + a[aP + 7] * b[bP + 1] + a[aP + 11] * b[bP + 2] + a[aP + 15] * b[bP + 3];
     }
 
-    private static void vecUpdate4(float[] dst, float x, final float[] a) {
+    private static void vecUpdate4(float[] dst, float x, float[] a) {
         for (int i = 0; i < 4; i++) {
             dst[i] += x * a[i];
         }
     }
 
     /* compute dst := dst + x * a */
-    private static void matUpdate4(float[] dst, int dP, float x, final float[] a, int aP) {
+    private static void matUpdate4(float[] dst, int dP, float x, float[] a, int aP) {
         for (int i = 0; i < 16; i++) {
             dst[i + dP] += x * a[i + aP];
         }
     }
 
-    private static void dumpMatrix(final float[] a) {
+    private static void dumpMatrix(float[] a) {
         for (int row = 0; row < 5; row++) {
             System.err.printf("%s[", row == 0 ? "[" : " ");
             for (int col = 0; col < 5; col++) {
@@ -131,7 +131,7 @@ public class ResoFilter {
         float[] c = new float[20];
         System.arraycopy(j, 0, c, 0, 20);
 
-        final float[] scales = { 1.0f, 1 / 2.0f, 1 / 6.0f, 1 / 24.0f };
+        float[] scales = { 1.0f, 1 / 2.0f, 1 / 6.0f, 1 / 24.0f };
         // taylor's series to n1
         for (int i = 0; i < n1; i++) {
             float scale = scales[i];
@@ -166,7 +166,7 @@ public class ResoFilter {
         dumpMatrix(a);
     }
 
-    public void process(final int[][] inBufs, final int[] controlIn, final int[] controlLast, int[][] outBufs) {
+    public void process(int[][] inBufs, int[] controlIn, int[] controlLast, int[][] outBufs) {
         int alpha = computeAlpha(controlLast[0]);
         int alphaIn = computeAlpha(controlIn[0]);
         int deltaAlpha = (alphaIn - alpha) >> Note.LG_N;
@@ -179,7 +179,7 @@ public class ResoFilter {
         if ((((long) alpha * (long) k) >> 24) > 1 << 24) {
             k = ((1 << 30) / alpha) << 18;
         }
-        final int[] iBuf = inBufs[0];
+        int[] iBuf = inBufs[0];
         int[] obuf = outBufs[0];
         int x0 = x[0];
         int x1 = x[1];
