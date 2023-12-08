@@ -66,6 +66,8 @@ public class Dx7SynthesizerTest {
         return Files.exists(Paths.get("local.properties"));
     }
 
+    static float volume = Float.parseFloat(System.getProperty("vavi.test.volume.midi",  "0.2"));
+
     @BeforeEach
     void setup() throws IOException {
         if (localPropertiesExists()) {
@@ -105,7 +107,7 @@ Debug.println("sequencer: " + sequencer.getClass().getName());
 System.err.println("START");
         sequencer.start();
 
-        volume(receiver, .5f); // gervill volume works!
+        volume(receiver, volume); // gervill volume works!
 
 if (!System.getProperty("vavi.test", "").equals("ide")) {
  Thread.sleep(10 * 1000);
@@ -144,7 +146,7 @@ Debug.println("synthesizer: " + synthesizer);
     void test4() throws Exception {
         ModelAbstractOscillator oscs;
         try {
-            oscs = Dx7Oscillator.class.newInstance();
+            oscs = Dx7Oscillator.class.getDeclaredConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
             throw new IllegalArgumentException(e);
         }
@@ -183,7 +185,7 @@ System.err.println("META: " + meta.getType());
 System.err.println("START");
         sequencer.start();
 
-        volume(receiver, .5f); // gervill volume works!
+        volume(receiver, volume); // gervill volume works!
 
 if (!System.getProperty("vavi.test", "").equals("ide")) {
  Thread.sleep(10 * 1000);
@@ -219,7 +221,7 @@ Debug.println(instrument.getName());
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
         line.addLineListener(event -> Debug.println(event.getType()));
         line.open();
-        volume(line, .2d);
+        volume(line, volume);
         line.start();
 
 for (int m = 35; m < 82; m++) {
@@ -271,7 +273,7 @@ Debug.println("drum: " + m);
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
         line.addLineListener(event -> Debug.println(event.getType()));
         line.open();
-        volume(line, .2d);
+        volume(line, volume);
         line.start();
 
         Random r = new Random();
@@ -333,7 +335,7 @@ Debug.println("patchs: " + n);
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
         line.addLineListener(event -> Debug.println(event.getType()));
         line.open();
-        volume(line, .2d);
+        volume(line, volume);
         line.start();
 
         Random r = new Random();

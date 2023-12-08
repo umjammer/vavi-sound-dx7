@@ -26,6 +26,8 @@ import static vavi.sound.SoundUtil.volume;
  */
 class SawtoothTest {
 
+    static double volume = Double.parseDouble(System.getProperty("vavi.test.volume",  "0.2"));
+
     @Test
     void test() throws Exception {
         float sampleRate = 44100.0f;
@@ -54,7 +56,7 @@ class SawtoothTest {
 //        CountDownLatch cdl = new CountDownLatch(1);
         line.addLineListener(event -> Debug.println(event.getType()));
         line.open();
-        volume(line, .2d);
+        volume(line, volume);
         line.start();
 
         int[] buf = new int[64];
