@@ -129,6 +129,8 @@ System.err.println("END");
         synthesizer.open();
 Debug.println("synthesizer: " + synthesizer);
 
+        volume(synthesizer.getReceiver(), volume); // gervill volume works!
+
         MidiChannel channel = synthesizer.getChannels()[0];
         for (int i = 0; i < 32; i++) {
             channel.programChange(1 + i);
@@ -202,14 +204,12 @@ System.err.println("END");
         synthesizer.close();
     }
 
-    /**
-     *
-     * @param args
-     */
+    /** */
     public static void main(String[] args) throws Exception {
         t3(args);
     }
 
+    /** */
     public static void t3(String[] args) throws Exception {
         final int nSamples = 20 * 1024;
         final float sampleRate = 44100.0f;
