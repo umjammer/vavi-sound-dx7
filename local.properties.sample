@@ -1,1 +1,4 @@
 #test.midi=/foo/bar.mid
+
+vavi.test.volume=0.02
+vavi.test.volume.midi=0.2
