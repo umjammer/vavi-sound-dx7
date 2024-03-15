@@ -93,6 +93,8 @@ Debug.println("patchs: " + n);
             }
 
             instruments.put("p." + 0 + "." + 0, new Dx7Instrument(0, 0, true, drums));
+        } catch (NullPointerException e) {
+            throw new IllegalStateException("unpacked.bin might not be found in classpath", e);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -129,7 +131,7 @@ Debug.println("patchs: " + n);
 
     @Override
     public Instrument[] getInstruments() {
-        return instruments.values().stream().toArray(Instrument[]::new);
+        return instruments.values().toArray(new Instrument[0]);
     }
 
     private Map<String, Instrument> emergencies = new HashMap<>();
@@ -159,5 +161,3 @@ Debug.printf("instrument not found for: %d.%d, %02x, %s", patch.getBank(), patch
         return ins;
     }
 }
-
-/* */

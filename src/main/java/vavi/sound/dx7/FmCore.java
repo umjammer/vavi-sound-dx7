@@ -28,7 +28,7 @@ class FmCore {
     public static class FmOperatorInfo {
         int in;
         int out;
-    };
+    }
 
     private static final int OUT_BUS_ONE = 1 << 0;
     private static final int OUT_BUS_TWO = 1 << 1;
@@ -83,7 +83,7 @@ class FmCore {
         new FmAlgorithm(0xc4, 0x04, 0x04, 0x04, 0x04, 0x04), // 32
     };
 
-    private int n_out(final FmAlgorithm alg) {
+    private int n_out(FmAlgorithm alg) {
         int count = 0;
         for (int i = 0; i < 6; i++) {
             if ((alg.ops[i] & 7) == OUT_BUS_ADD)
@@ -93,16 +93,16 @@ class FmCore {
     }
 
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 32; i++) {
-            sb.append((i + 1) + ":");
-            final FmAlgorithm alg = algorithms[i];
+            sb.append(i + 1).append(":");
+            FmAlgorithm alg = algorithms[i];
             for (int j = 0; j < 6; j++) {
                 int flags = alg.ops[j];
                 sb.append(" ");
                 if ((flags & FB_IN) != 0)
                     sb.append("[");
-                sb.append(((flags & IN_BUS_ONE) != 0 ? "1" : (flags & IN_BUS_TWO) != 0 ? "2" : "0") + "->");
+                sb.append((flags & IN_BUS_ONE) != 0 ? "1" : (flags & IN_BUS_TWO) != 0 ? "2" : "0").append("->");
                 sb.append((flags & OUT_BUS_ONE) != 0 ? "1" : (flags & OUT_BUS_TWO) != 0 ? "2" : "0");
                 if ((flags & OUT_BUS_ADD) != 0)
                     sb.append("+");
@@ -110,46 +110,46 @@ class FmCore {
                 if ((flags & FB_OUT) != 0)
                     sb.append("]");
             }
-            sb.append(" " + n_out(alg));
+            sb.append(" ").append(n_out(alg));
         }
         return sb.toString();
     }
 
-    public void compute(int[] output, FmOpParams[] params, int algorithm, int[] fb_buf, int feedback_shift) {
+    public void compute(int[] output, FmOpParams[] params, int algorithm, int[] fbBuf, int feedbackShift) {
         final int kLevelThresh = 1120;
-        final FmAlgorithm alg = algorithms[algorithm];
-        boolean[] has_contents = {
+        FmAlgorithm alg = algorithms[algorithm];
+        boolean[] hasContents = {
             true, false, false
         };
         for (int op = 0; op < 6; op++) {
             int flags = alg.ops[op];
             boolean add = (flags & OUT_BUS_ADD) != 0;
             FmOpParams param = params[op];
-            int inbus = (flags >> 4) & 3;
-            int outbus = flags & 3;
-            int[] outptr = (outbus == 0) ? output : output;
+            int inBus = (flags >> 4) & 3;
+            int outBus = flags & 3;
+            int[] outPtr = (outBus == 0) ? output : output; // maybe align or not
             int gain1 = param.gain[0];
             int gain2 = param.gain[1];
             if (gain1 >= kLevelThresh || gain2 >= kLevelThresh) {
-                if (!has_contents[outbus]) {
+                if (!hasContents[outBus]) {
                     add = false;
                 }
-                if (inbus == 0 || !has_contents[inbus]) {
+                if (inBus == 0 || !hasContents[inBus]) {
                     // TODO more than one op in a feedback loop
-                    if ((flags & 0xc0) == 0xc0 && feedback_shift < 16) {
-                        // Debug.println(op + " fb " + inbus + outbus + add);
-                        FmOpKernel.compute_fb(outptr, param.phase, param.freq, gain1, gain2, fb_buf, feedback_shift, add);
+                    if ((flags & 0xc0) == 0xc0 && feedbackShift < 16) {
+                        // Debug.println(op + " fb " + inBus + outBus + add);
+                        FmOpKernel.computeFb(outPtr, param.phase, param.freq, gain1, gain2, fbBuf, feedbackShift, add);
                     } else {
-                        // Debug.println(op + " pure " + inbus + outbus + add);
-                        FmOpKernel.compute_pure(outptr, param.phase, param.freq, gain1, gain2, add);
+                        // Debug.println(op + " pure " + inBus + outBus + add);
+                        FmOpKernel.computePure(outPtr, param.phase, param.freq, gain1, gain2, add);
                     }
                 } else {
-                    // Debug.println(op + " normal " + inbus + outbus + " " + param.freq + add);
-                    FmOpKernel.compute(outptr, outptr, param.phase, param.freq, gain1, gain2, add); // TODO 2nd outptr
+                    // Debug.println(op + " normal " + inBus + outBus + " " + param.freq + add);
+                    FmOpKernel.compute(outPtr, outPtr, param.phase, param.freq, gain1, gain2, add); // TODO 2nd outPtr
                 }
-                has_contents[outbus] = true;
+                hasContents[outBus] = true;
             } else if (!add) {
-                has_contents[outbus] = false;
+                hasContents[outBus] = false;
             }
             param.phase += param.freq << Note.LG_N;
         }

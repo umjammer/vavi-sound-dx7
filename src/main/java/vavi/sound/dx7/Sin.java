@@ -22,35 +22,35 @@ class Sin {
     private static final int SIN_N_SAMPLES = 1 << SIN_LG_N_SAMPLES;
     private static final int R = 1 << 29;
 
-    private static int[] sintab = new int[SIN_N_SAMPLES << 1];
+    private static int[] sinTab = new int[SIN_N_SAMPLES << 1];
 
     static {
-        double dphase = 2 * Math.PI / SIN_N_SAMPLES;
-        int c = (int) Math.floor(Math.cos(dphase) * (1 << 30) + 0.5);
-        int s = (int) Math.floor(Math.sin(dphase) * (1 << 30) + 0.5);
+        double dPhase = 2 * Math.PI / SIN_N_SAMPLES;
+        int c = (int) Math.floor(Math.cos(dPhase) * (1 << 30) + 0.5);
+        int s = (int) Math.floor(Math.sin(dPhase) * (1 << 30) + 0.5);
         int u = 1 << 30;
         int v = 0;
         for (int i = 0; i < SIN_N_SAMPLES / 2; i++) {
-            sintab[(i << 1) + 1] = (v + 32) >> 6;
-            sintab[((i + SIN_N_SAMPLES / 2) << 1) + 1] = -((v + 32) >> 6);
+            sinTab[(i << 1) + 1] = (v + 32) >> 6;
+            sinTab[((i + SIN_N_SAMPLES / 2) << 1) + 1] = -((v + 32) >> 6);
             int t = (int) (((long) u * (long) s + (long) v * (long) c + R) >> 30);
             u = (int) (((long) u * (long) c - (long) v * (long) s + R) >> 30);
             v = t;
         }
         for (int i = 0; i < SIN_N_SAMPLES - 1; i++) {
-            sintab[i << 1] = sintab[(i << 1) + 3] - sintab[(i << 1) + 1];
+            sinTab[i << 1] = sinTab[(i << 1) + 3] - sinTab[(i << 1) + 1];
         }
-        sintab[(SIN_N_SAMPLES << 1) - 2] = -sintab[(SIN_N_SAMPLES << 1) - 1];
+        sinTab[(SIN_N_SAMPLES << 1) - 2] = -sinTab[(SIN_N_SAMPLES << 1) - 1];
     }
 
     public static int lookup(int phase) {
         final int SHIFT = 24 - SIN_LG_N_SAMPLES;
-        int lowbits = phase & ((1 << SHIFT) - 1);
-        int phase_int = (phase >> (SHIFT - 1)) & ((SIN_N_SAMPLES - 1) << 1);
-        int dy = sintab[phase_int];
-        int y0 = sintab[phase_int + 1];
+        int lowBits = phase & ((1 << SHIFT) - 1);
+        int phaseInt = (phase >> (SHIFT - 1)) & ((SIN_N_SAMPLES - 1) << 1);
+        int dy = sinTab[phaseInt];
+        int y0 = sinTab[phaseInt + 1];
 
-        return (int) (y0 + (((long) dy * (long) lowbits) >> SHIFT));
+        return (int) (y0 + (((long) dy * (long) lowBits) >> SHIFT));
     }
 
     // coefficients are Chebyshev polynomial, computed by compute_cos_poly.py
@@ -63,9 +63,11 @@ class Sin {
     public static int compute(int phase) {
         int x = (phase & ((1 << 23) - 1)) - (1 << 22);
         int x2 = (int) (((long) x * (long) x) >> 16);
-        int y = (int) (((((((((((((long) C8_8 * (long) x2) >> 32) + C8_6) * x2) >> 32) + C8_4) * x2) >> 32) + C8_2) *
-                         x2) >> 32) +
-                       C8_0);
+        int y = (int) (((((((((((((long) C8_8
+                * (long) x2) >> 32) + C8_6)
+                * x2) >> 32) + C8_4)
+                * x2) >> 32) + C8_2)
+                * x2) >> 32) + C8_0);
         y ^= -((phase >> 23) & 1);
         return y;
     }
@@ -80,11 +82,12 @@ class Sin {
     public static int compute10(int phase) {
         int x = (phase & ((1 << 29) - 1)) - (1 << 28);
         int x2 = (int) (((long) x * (long) x) >> 26);
-        int y = (int) ((((((((((((((((long) C10_10 * (long) x2) >> 34) + C10_8) * x2) >> 34) + C10_6) * x2) >> 34) + C10_4) *
-                            x2) >> 32) +
-                          C10_2) *
-                         x2) >> 30) +
-                       C10_0);
+        int y = (int) ((((((((((((((((long) C10_10
+                * (long) x2) >> 34) + C10_8)
+                * x2) >> 34) + C10_6)
+                * x2) >> 34) + C10_4)
+                * x2) >> 32) + C10_2)
+                * x2) >> 30) + C10_0);
         y ^= -((phase >> 29) & 1);
         return y;
     }

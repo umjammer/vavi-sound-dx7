@@ -30,7 +30,7 @@ public class FilerTest {
 
     static long v = 0;
 
-    void condition_governor() {
+    void conditionGovernor() {
         // sleep for a bit to avoid thermal throttling
         try {
             Thread.sleep(900);
@@ -49,7 +49,7 @@ public class FilerTest {
         v = x;
     }
 
-    float[] mkrandom(int size) {
+    float[] makeRandom(int size) {
         Random random = new Random(System.currentTimeMillis());
         float[] result = new float[size];
         for (int i = 0; i < size; i++) {
@@ -58,26 +58,26 @@ public class FilerTest {
         return result;
     }
 
-//    double test_accuracy(FirFilter<Float, Float> f1, FirFilter<Float, Float> f2, final float[] inp, int nblock) {
-//        float[] out1 = new float[nblock];
-//        float[] out2 = new float[nblock];
-//        f1.process(inp, 1, out1, nblock);
-//        f2.process(inp, 1, out2, nblock);
+//    double test_accuracy(FirFilter<Float, Float> f1, FirFilter<Float, Float> f2, final float[] inp, int nBlock) {
+//        float[] out1 = new float[nBlock];
+//        float[] out2 = new float[nBlock];
+//        f1.process(inp, 1, out1, nBlock);
+//        f2.process(inp, 1, out2, nBlock);
 //        double err = 0;
-//        for (int i = 0; i < nblock; i++) {
+//        for (int i = 0; i < nBlock; i++) {
 //            Debug.printf("#%d: %f %f\n", i, out1[i], out2[i]);
 //            err += Math.abs(out1[i] - out2[i]);
 //        }
 //        return err;
 //    }
+
+//    void benchFir(int size, int experiment) {
+//        conditionGovernor();
 //
-//    void benchfir(int size, int experiment) {
-//        condition_governor();
-//
-//        final int nblock = 64;
-//        float[] kernel = mkrandom(size);
-//        float[] inp = mkrandom(size + nblock);
-//        float[] out = new float[nblock];
+//        final int nBlock = 64;
+//        float[] kernel = makeRandom(size);
+//        float[] in = makeRandom(size + nBlock);
+//        float[] out = new float[nBlock];
 //        FirFilter<Float, Float> f;
 //
 //        switch (experiment) {
@@ -85,35 +85,35 @@ public class FilerTest {
 //            f = new SimpleFirFilter(kernel, size);
 //            break;
 //        case 4:
-//            f = new HalfRateFirFilter(kernel, size, nblock);
+//            f = new HalfRateFirFilter(kernel, size, nBlock);
 //            break;
 //        }
 //
 //        double start = System.currentTimeMillis();
 //        for (int j = 0; j < 15625; j++) {
-//            f.process(inp, 1, out, nblock);
+//            f.process(in, 1, out, nBlock);
 //        }
 //        double elapsed = System.currentTimeMillis() - start;
 //        Debug.printf("%i %f\n", size, 1e3 * elapsed);
 //
 //        FirFilter<Float, Float> fbase = new SimpleFirFilter(kernel, size);
-//        double accuracy = test_accuracy(fbase, f, inp, nblock);
+//        double accuracy = test_accuracy(fbase, f, in, nBlock);
 //        Debug.printf("#accuracy = %g\n", accuracy);
 //    }
 
 //    @Test
-//    void runfirbench() {
+//    void runFirBench() {
 //        Debug.printf("set style data linespoints\n" + "set xlabel 'FIR kernel size'\n" + "set ylabel 'ns per sample'\n" +
 //                     "plot '-' title 'scalar', '-' title '4x4 block', '-' title 'fixed16', '-' title 'fixed16 mirror', '-' title 'half rate'\n");
 //        for (int experiment = 0; experiment < 6; experiment++) {
 //            for (int i = 16; i <= 256; i += 16) {
-//                benchfir(i, experiment);
+//                benchFir(i, experiment);
 //            }
 //            Debug.printf("e\n");
 //        }
 //    }
 
-    void scalarbiquad(final float[] inp, float[] out, int n, float b0, float b1, float b2, float a1, float a2) {
+    void scalarBiQuad(float[] inp, float[] out, int n, float b0, float b1, float b2, float a1, float a2) {
         float x1 = 0, x2 = 0, y1 = 0, y2 = 0;
         for (int i = 0; i < n; i++) {
             float x = inp[i];
@@ -126,16 +126,16 @@ public class FilerTest {
         }
     }
 
-    void benchscalarbiquad() {
-        condition_governor();
+    void benchScalarBiQuad() {
+        conditionGovernor();
         final int nbuf = 1 << 10;
-        float[] inp = mkrandom(nbuf);
+        float[] inp = makeRandom(nbuf);
         float[] out = new float[nbuf];
 
         double start = System.currentTimeMillis();
         final int niter = 10000;
         for (int i = 0; i < niter; i++) {
-            scalarbiquad(inp, out, nbuf, 1.0207f, -1.7719f, .9376f, -1.7719f, 0.9583f);
+            scalarBiQuad(inp, out, nbuf, 1.0207f, -1.7719f, .9376f, -1.7719f, 0.9583f);
         }
         double elapsed = System.currentTimeMillis() - start;
         double ns_per_iir = 1e9 * elapsed / nbuf / niter;
@@ -143,7 +143,7 @@ public class FilerTest {
     }
 
     // see "lab/biquadin two.ipynb" for why
-    void initbiquadmatrix(float[] matrix, double b0, double b1, double b2, double a1, double a2) {
+    void initBiquadMatrix(float[] matrix, double b0, double b1, double b2, double a1, double a2) {
         double c1 = b1 - a1 * b0;
         double c2 = b2 - a2 * b0;
         matrix[0] = (float) b0;
@@ -165,15 +165,15 @@ public class FilerTest {
     }
 
     @Test
-    void runbiquad() {
-        benchscalarbiquad();
+    void runBiQuad() {
+        benchScalarBiQuad();
     }
 
     @Test
     void runfmbench() {
-        condition_governor();
-        final int nbuf = 64;
-        int[] out = new int[nbuf];
+        conditionGovernor();
+        final int nBuf = 64;
+        int[] out = new int[nBuf];
 
         int freq = (int) (440.0 / 44100.0 * (1 << 24));
         double start = System.currentTimeMillis();
@@ -183,19 +183,18 @@ public class FilerTest {
         }
 
         double elapsed = System.currentTimeMillis() - start;
-        double ns_per_sample = 1e9 * elapsed / nbuf / niter;
-        Debug.printf("fm op kernel: %f ms/sample\n", ns_per_sample);
+        double nsPerSample = 1e9 * elapsed / nBuf / niter;
+        Debug.printf("fm op kernel: %f ms/sample\n", nsPerSample);
     }
 
     @Test
-    void runsawbench() {
-        condition_governor();
-        double sample_rate = 44100.0;
-        Sawtooth.init(sample_rate);
-        final int nbuf = 64;
-        int[] out = new int[nbuf];
-        Sawtooth s = new Sawtooth();
-        int[] control_last = new int[1];
+    void runSawBench() {
+        conditionGovernor();
+        double sampleRate = 44100.0;
+        final int nBuf = 64;
+        int[] out = new int[nBuf];
+        Sawtooth s = Sawtooth.getInstance(sampleRate);
+        int[] controlLast = new int[1];
         int[] control = new int[1];
         int[][] bufs = new int[1][];
         bufs[0] = out;
@@ -203,38 +202,38 @@ public class FilerTest {
         for (int i = 0; i < 1; i++) {
             double f = 440.0 * (i + 1);
             control[0] = (int) ((1 << 24) * Math.log(f) / Math.log(2));
-            control_last[0] = control[0];
+            controlLast[0] = control[0];
 
             double start = System.currentTimeMillis();
             final int niter = 1000000;
             for (int j = 0; j < niter; j++) {
-                s.process(null, control, control_last, bufs);
+                s.process(null, control, controlLast, bufs);
             }
 
             double elapsed = System.currentTimeMillis() - start;
-            double ns_per_sample = 1e9 * elapsed / nbuf / niter;
-            Debug.printf("sawtooth %gHz: %f ms/sample\n", f, ns_per_sample);
+            double nsPerSample = 1e9 * elapsed / nBuf / niter;
+            Debug.printf("sawtooth %gHz: %f ms/sample\n", f, nsPerSample);
         }
     }
 
     @Test
-    void runladderbench() {
-        ResoFilter.test_matrix();
-        condition_governor();
-        double sample_rate = 44100.0;
-        Freqlut.init(sample_rate);
-        final int nbuf = 64;
-        int[] in = new int[nbuf];
-        int[] out = new int[nbuf];
-        ResoFilter r = new ResoFilter();
-        int[] control_last = new int[3];
+    void runLadderBench() {
+        ResoFilter.testMatrix();
+        conditionGovernor();
+        float sampleRate = 44100.0f;
+        final int nBuf = 64;
+        int[] in = new int[nBuf];
+        int[] out = new int[nBuf];
+        Context context = Context.getInstance(sampleRate);
+        ResoFilter r = new ResoFilter(context);
+        int[] controlLast = new int[3];
         int[] control = new int[3];
-        int[][] inbufs = new int[1][];
-        int[][] outbufs = new int[1][];
-        inbufs[0] = in;
-        outbufs[0] = out;
+        int[][] inBufs = new int[1][];
+        int[][] outBufs = new int[1][];
+        inBufs[0] = in;
+        outBufs[0] = out;
 
-        for (int i = 0; i < nbuf; i++) {
+        for (int i = 0; i < nBuf; i++) {
             in[i] = (i - 32) << 18;
         }
         control[0] = 1 << 23;
@@ -245,15 +244,13 @@ public class FilerTest {
             final int niter = 1000000;
 //            for (float f : in) System.err.printf("%f, ",  f); System.err.println();
             for (int i = 0; i < niter; i++) {
-                r.process(inbufs, control, control_last, outbufs);
+                r.process(inBufs, control, controlLast, outBufs);
             }
             for (float f : out) System.err.printf("%f, ",  f); System.err.println();
 
             double elapsed = System.currentTimeMillis() - start;
-            double ns_per_sample = 1e9 * elapsed / nbuf / niter;
-            Debug.printf("ladder %s: %f ms/sample\n", nl != 0 ? "nonlinear" : "linear", ns_per_sample);
+            double nsPerSample = 1e9 * elapsed / nBuf / niter;
+            Debug.printf("ladder %s: %f ms/sample\n", nl != 0 ? "nonlinear" : "linear", nsPerSample);
         }
     }
 }
-
-/* */

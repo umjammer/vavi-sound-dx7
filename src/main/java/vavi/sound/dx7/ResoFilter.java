@@ -27,30 +27,27 @@ package vavi.sound.dx7;
  */
 public class ResoFilter {
 
-//    private static double this_sample_rate;
-
-//    public static void init(double sample_rate) {
-//        this_sample_rate = sample_rate;
-//    }
-
     private int[] x = new int[4];
     private int[] w = new int[4];
     private int yy;
 
-    public ResoFilter() {
+    private Context context;
+
+    public ResoFilter(Context context) {
         for (int i = 0; i < 4; i++) {
             x[i] = 0;
             w[i] = 0;
         }
+        this.context = context;
     }
 
-    private static int compute_alpha(int logf) {
-        return Math.min(1 << 24, Freqlut.lookup(logf));
+    private int computeAlpha(int logf) {
+        return Math.min(1 << 24, context.freqLut.lookup(logf));
     }
 
     // Some really generic 4x4 matrix multiplication operations, suitable
     // for NEON'ing
-    private static void matmult4(float[] dst, int dP, final float[] a, int aP, final float[] b, int bP) {
+    private static void matMult4(float[] dst, int dP, float[] a, int aP, float[] b, int bP) {
         dst[dP + 0] = a[aP + 0] * b[bP + 0] + a[aP + 4] * b[bP + 1] + a[aP + 8] * b[bP + 2] + a[aP + 12] * b[bP + 3];
         dst[dP + 1] = a[aP + 1] * b[bP + 0] + a[aP + 5] * b[bP + 1] + a[aP + 9] * b[bP + 2] + a[aP + 13] * b[bP + 3];
         dst[dP + 2] = a[aP + 2] * b[bP + 0] + a[aP + 6] * b[bP + 1] + a[aP + 10] * b[bP + 2] + a[aP + 14] * b[bP + 3];
@@ -69,27 +66,27 @@ public class ResoFilter {
         dst[dP + 15] = a[aP + 3] * b[bP + 12] + a[aP + 7] * b[bP + 13] + a[aP + 11] * b[bP + 14] + a[aP + 15] * b[bP + 15];
     }
 
-    private static void matvec4(float[] dst, int dP, final float[] a, int aP, final float[] b, int bP) {
+    private static void matVec4(float[] dst, int dP, float[] a, int aP, float[] b, int bP) {
         dst[dP + 0] = a[aP + 0] * b[bP + 0] + a[aP + 4] * b[bP + 1] + a[aP + 8] * b[bP + 2] + a[aP + 12] * b[bP + 3];
         dst[dP + 1] = a[aP + 1] * b[bP + 0] + a[aP + 5] * b[bP + 1] + a[aP + 9] * b[bP + 2] + a[aP + 13] * b[bP + 3];
         dst[dP + 2] = a[aP + 2] * b[bP + 0] + a[aP + 6] * b[bP + 1] + a[aP + 10] * b[bP + 2] + a[aP + 14] * b[bP + 3];
         dst[dP + 3] = a[aP + 3] * b[bP + 0] + a[aP + 7] * b[bP + 1] + a[aP + 11] * b[bP + 2] + a[aP + 15] * b[bP + 3];
     }
 
-    private static void vecupdate4(float[] dst, float x, final float[] a) {
+    private static void vecUpdate4(float[] dst, float x, float[] a) {
         for (int i = 0; i < 4; i++) {
             dst[i] += x * a[i];
         }
     }
 
     /* compute dst := dst + x * a */
-    private static void matupdate4(float[] dst, int dP, float x, final float[] a, int aP) {
+    private static void matUpdate4(float[] dst, int dP, float x, float[] a, int aP) {
         for (int i = 0; i < 16; i++) {
             dst[i + dP] += x * a[i + aP];
         }
     }
 
-    private static void dump_matrix(final float[] a) {
+    private static void dumpMatrix(float[] a) {
         for (int row = 0; row < 5; row++) {
             System.err.printf("%s[", row == 0 ? "[" : " ");
             for (int col = 0; col < 5; col++) {
@@ -100,13 +97,13 @@ public class ResoFilter {
         }
     }
 
-    private static void make_state_transition(float[] result, int f0, int k) {
+    private static void makeStateTransition(float[] result, int f0, int k) {
         // TODO: these should depend on k, and be just enough to meet error bound
         int n1 = 4;
         int n2 = 4;
         float f = f0 * (1.0f / (1 << (24 + n2)));
-        float k_f = k * (1.0f / (1 << 24));
-        k_f = Math.min(k_f, 3.98f);
+        float kF = k * (1.0f / (1 << 24));
+        kF = Math.min(kF, 3.98f);
 
         // these are 5x5 matrices of which we store the bottom 5x4
         // Top row of Jacobian is all zeros
@@ -120,7 +117,7 @@ public class ResoFilter {
         j[10] = f;
         j[14] = -f;
         j[15] = f;
-        j[16] = -k_f * f;
+        j[16] = -kF * f;
         j[19] = -f;
 
         // Top row of exponential is [1 0 0 0 0]
@@ -134,16 +131,16 @@ public class ResoFilter {
         float[] c = new float[20];
         System.arraycopy(j, 0, c, 0, 20);
 
-        final float[] scales = { 1.0f, 1 / 2.0f, 1 / 6.0f, 1 / 24.0f };
+        float[] scales = { 1.0f, 1 / 2.0f, 1 / 6.0f, 1 / 24.0f };
         // taylor's series to n1
         for (int i = 0; i < n1; i++) {
             float scale = scales[i];
-            vecupdate4(a, scale, c);
-            matupdate4(a, 4, scale, c, 4);
+            vecUpdate4(a, scale, c);
+            matUpdate4(a, 4, scale, c, 4);
             if (i < n1 - 1) {
                 float[] tmp = new float[20];
-                matvec4(tmp, 0, c, 4, j, 0);
-                matmult4(tmp, 4, c, 4, j, 4);
+                matVec4(tmp, 0, c, 4, j, 0);
+                matMult4(tmp, 4, c, 4, j, 4);
                 System.arraycopy(tmp, 0, c, 0, 20);
             }
         }
@@ -151,8 +148,8 @@ public class ResoFilter {
         // repeated squaring
         for (int i = 0; i < n2; i++) {
             float[] tmp = new float[20];
-            matvec4(tmp, 0, a, 4, a, 0);
-            matmult4(tmp, 4, a, 4, a, 4);
+            matVec4(tmp, 0, a, 4, a, 0);
+            matMult4(tmp, 4, a, 4, a, 4);
             for (int l = 0; l < 4; l++) {
                 a[l] += tmp[l];
             }
@@ -162,28 +159,28 @@ public class ResoFilter {
         System.arraycopy(a, 0, result, 0, 20);
     }
 
-    static void test_matrix() {
+    static void testMatrix() {
         float[] params = { 1.0f, 3.99f };
         float[] a = new float[20];
-        make_state_transition(a, (int) (params[0] * (1 << 24)), (int) (params[1] * (1 << 24)));
-        dump_matrix(a);
+        makeStateTransition(a, (int) (params[0] * (1 << 24)), (int) (params[1] * (1 << 24)));
+        dumpMatrix(a);
     }
 
-    public void process(final int[][] inbufs, final int[] control_in, final int[] control_last, int[][] outbufs) {
-        int alpha = compute_alpha(control_last[0]);
-        int alpha_in = compute_alpha(control_in[0]);
-        int delta_alpha = (alpha_in - alpha) >> Note.LG_N;
-        int k = control_last[1];
-        int k_in = control_in[1];
-        int delta_k = (k_in - k) >> Note.LG_N;
-        if ((((long) alpha_in * (long) k_in) >> 24) > 1 << 24) {
-            k_in = ((1 << 30) / alpha_in) << 18;
+    public void process(int[][] inBufs, int[] controlIn, int[] controlLast, int[][] outBufs) {
+        int alpha = computeAlpha(controlLast[0]);
+        int alphaIn = computeAlpha(controlIn[0]);
+        int deltaAlpha = (alphaIn - alpha) >> Note.LG_N;
+        int k = controlLast[1];
+        int kIn = controlIn[1];
+        int deltaK = (kIn - k) >> Note.LG_N;
+        if ((((long) alphaIn * (long) kIn) >> 24) > 1 << 24) {
+            kIn = ((1 << 30) / alphaIn) << 18;
         }
         if ((((long) alpha * (long) k) >> 24) > 1 << 24) {
             k = ((1 << 30) / alpha) << 18;
         }
-        final int[] ibuf = inbufs[0];
-        int[] obuf = outbufs[0];
+        int[] iBuf = inBufs[0];
+        int[] obuf = outBufs[0];
         int x0 = x[0];
         int x1 = x[1];
         int x2 = x[2];
@@ -194,9 +191,9 @@ public class ResoFilter {
         int w3 = w[3];
         int yy0 = yy;
         for (int i = 0; i < Note.N; i++) {
-            alpha += delta_alpha;
-            k += delta_k;
-            int signal = ibuf[i];
+            alpha += deltaAlpha;
+            k += deltaK;
+            int signal = iBuf[i];
             int fb = (int) (((long) k * (long) (x3 + yy0)) >> 25);
             yy0 = x3;
             int rx = signal - fb;

@@ -19,80 +19,80 @@ package vavi.sound.dx7;
 
 public class PitchEnv {
 
-    private int[] rates_ = new int[4];
-    private int[] levels_ = new int[4];
-    private int level_;
-    private int targetlevel_;
-    private boolean rising_;
-    private int ix_;
-    private int inc_;
+    private int[] rates = new int[4];
+    private int[] levels = new int[4];
+    private int level;
+    private int targetLevel;
+    private boolean rising;
+    private int ix;
+    private int inc;
 
-    private boolean down_;
+    private boolean down;
 
-    private static int unit_;
+    private int unit;
 
-    public static void init(double sample_rate) {
-        unit_ = (int) (Note.N * (1 << 24) / (21.3 * sample_rate) + 0.5);
+    PitchEnv(double sampleRate) {
+        unit = (int) (Note.N * (1 << 24) / (21.3 * sampleRate) + 0.5);
     }
 
-    private static int ratetab[] = {
+    private static final int[] rateTab = {
         1, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 16, 16, 17, 18, 18, 19, 20,
         21, 22, 23, 24, 25, 26, 27, 28, 30, 31, 33, 34, 36, 37, 38, 39, 41, 42, 44, 46, 47, 49, 51, 53, 54, 56, 58, 60, 62, 64,
         66, 68, 70, 72, 74, 76, 79, 82, 85, 88, 91, 94, 98, 102, 106, 110, 115, 120, 125, 130, 135, 141, 147, 153, 159, 165,
         171, 178, 185, 193, 202, 211, 232, 243, 254, 255
     };
 
-    private static int pitchtab[] = {
+    private static final int[] pitchTab = {
         -128, -116, -104, -95, -85, -76, -68, -61, -56, -52, -49, -46, -43, -41, -39, -37, -35, -33, -32, -31, -30, -29, -28,
         -27, -26, -25, -24, -23, -22, -21, -20, -19, -18, -17, -16, -15, -14, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4, -3,
         -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
         30, 31, 32, 33, 34, 35, 38, 40, 43, 46, 49, 53, 58, 65, 73, 82, 92, 103, 115, 127
     };
 
-    public void set(final int[] r, final int[] l) {
+    public void set(int[] r, int[] l) {
         for (int i = 0; i < 4; i++) {
-            rates_[i] = r[i];
-            levels_[i] = l[i];
+            rates[i] = r[i];
+            levels[i] = l[i];
         }
-        level_ = pitchtab[l[3]] << 19;
-        down_ = true;
+        level = pitchTab[l[3]] << 19;
+        down = true;
         advance(0);
     }
 
-    public int getsample() {
-        if (ix_ < 3 || (ix_ < 4) && !down_) {
-            if (rising_) {
-                level_ += inc_;
-                if (level_ >= targetlevel_) {
-                    level_ = targetlevel_;
-                    advance(ix_ + 1);
+    public int getSample() {
+        if (ix < 3 || (ix < 4) && !down) {
+            if (rising) {
+                level += inc;
+                if (level >= targetLevel) {
+                    level = targetLevel;
+                    advance(ix + 1);
                 }
             } else { // !rising
-                level_ -= inc_;
-                if (level_ <= targetlevel_) {
-                    level_ = targetlevel_;
-                    advance(ix_ + 1);
+                level -= inc;
+                if (level <= targetLevel) {
+                    level = targetLevel;
+                    advance(ix + 1);
                 }
             }
         }
-        return level_;
+        return level;
     }
 
-    public void keydown(boolean d) {
-        if (down_ != d) {
-            down_ = d;
+    public void keyDown(boolean d) {
+        if (down != d) {
+            down = d;
             advance(d ? 0 : 3);
         }
     }
 
-    public void advance(int newix) {
-        ix_ = newix;
-        if (ix_ < 4) {
-            int newlevel = levels_[ix_];
-            targetlevel_ = pitchtab[newlevel] << 19;
-            rising_ = (targetlevel_ > level_);
+    public void advance(int newIx) {
+        ix = newIx;
+        if (ix < 4) {
+            int newLevel = levels[ix];
+            targetLevel = pitchTab[newLevel] << 19;
+            rising = (targetLevel > level);
 
-            inc_ = ratetab[rates_[ix_]] * unit_;
+            inc = rateTab[rates[ix]] * unit;
         }
     }
 }

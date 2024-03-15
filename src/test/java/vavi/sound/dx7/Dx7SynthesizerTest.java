@@ -6,14 +6,17 @@
 
 package vavi.sound.dx7;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
 import javax.sound.midi.Instrument;
 import javax.sound.midi.MetaEventListener;
-import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Receiver;
@@ -23,12 +26,11 @@ import javax.sound.midi.Synthesizer;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
-import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.SourceDataLine;
 
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import com.sun.media.sound.ModelAbstractOscillator;
 import com.sun.media.sound.ModelPatch;
@@ -38,6 +40,11 @@ import vavi.sound.midi.dx7.Dx7Soundbank;
 import vavi.sound.midi.dx7.Dx7Synthesizer;
 import vavi.util.Debug;
 import vavi.util.StringUtil;
+import vavi.util.properties.annotation.Property;
+import vavi.util.properties.annotation.PropsEntity;
+
+import static vavi.sound.SoundUtil.volume;
+import static vavi.sound.midi.MidiUtil.volume;
 
 
 /**
@@ -47,6 +54,7 @@ import vavi.util.StringUtil;
  * @version 0.00 2020/10/30 umjammer initial version <br>
  */
 @SuppressWarnings("restriction")
+@PropsEntity(url = "file:local.properties")
 public class Dx7SynthesizerTest {
 
     static {
@@ -54,9 +62,24 @@ public class Dx7SynthesizerTest {
         System.setProperty("javax.sound.midi.Sequencer", "#Real Time Sequencer");
     }
 
+    static boolean localPropertiesExists() {
+        return Files.exists(Paths.get("local.properties"));
+    }
+
+    static float volume = Float.parseFloat(System.getProperty("vavi.test.volume.midi",  "0.2"));
+
+    @BeforeEach
+    void setup() throws IOException {
+        if (localPropertiesExists()) {
+            PropsEntity.Util.bind(this);
+        }
+    }
+
+    @Property(name = "test.midi")
+    String midi = "src/test/resources/test.mid";
+
     @Test
-//    @Disabled
-    @DisabledIfEnvironmentVariable(named = "GITHUB_WORKFLOW", matches = ".*")
+    @DisplayName("directly")
     void test() throws Exception {
         Synthesizer synthesizer = new Dx7Synthesizer();
         synthesizer.open();
@@ -65,31 +88,34 @@ Debug.println("synthesizer: " + synthesizer.getClass().getName());
         Sequencer sequencer = MidiSystem.getSequencer(false);
         sequencer.open();
 Debug.println("sequencer: " + sequencer.getClass().getName());
-        sequencer.getTransmitter().setReceiver(synthesizer.getReceiver());
+        Receiver receiver = synthesizer.getReceiver();
+        sequencer.getTransmitter().setReceiver(receiver);
 
-//        String filename = "../../src/sano-n/vavi-apps-dx7/tmp/midi/minute_waltz.mid";
-//        String filename = "1/TongPoo.mid";
-//        String filename = "1/title-screen.mid";
-//        String filename = "1/overworld.mid";
-        String filename = "1/m0057_01.mid";
-//        String filename = "1/ac4br_gm.MID";
-        File file = new File(System.getProperty("user.home"), "/Music/midi/" + filename);
-        Sequence seq = MidiSystem.getSequence(file);
+        Path file = Paths.get(midi);
+
+        Sequence seq = MidiSystem.getSequence(new BufferedInputStream(Files.newInputStream(file)));
 
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        MetaEventListener mel = new MetaEventListener() {
-            public void meta(MetaMessage meta) {
+        MetaEventListener mel = meta -> {
 //System.err.println("META: " + meta.getType());
-                if (meta.getType() == 47) {
-                    countDownLatch.countDown();
-                }
+            if (meta.getType() == 47) {
+                countDownLatch.countDown();
             }
         };
         sequencer.setSequence(seq);
         sequencer.addMetaEventListener(mel);
 System.err.println("START");
         sequencer.start();
+
+        volume(receiver, volume); // gervill volume works!
+
+if (!System.getProperty("vavi.test", "").equals("ide")) {
+ Thread.sleep(10 * 1000);
+ sequencer.stop();
+ Debug.println("STOP");
+} else {
         countDownLatch.await();
+}
 System.err.println("END");
         sequencer.removeMetaEventListener(mel);
         sequencer.close();
@@ -98,11 +124,12 @@ System.err.println("END");
     }
 
     @Test
-    @Disabled
     void test2() throws Exception {
         Synthesizer synthesizer = new Dx7Synthesizer();
         synthesizer.open();
 Debug.println("synthesizer: " + synthesizer);
+
+        volume(synthesizer.getReceiver(), volume); // gervill volume works!
 
         MidiChannel channel = synthesizer.getChannels()[0];
         for (int i = 0; i < 32; i++) {
@@ -118,14 +145,11 @@ Debug.println("synthesizer: " + synthesizer);
     }
 
     @Test
-    @Disabled
     void test4() throws Exception {
         ModelAbstractOscillator oscs;
         try {
-            oscs = Dx7Oscillator.class.newInstance();
-        } catch (InstantiationException e) {
-            throw new IllegalArgumentException(e);
-        } catch (IllegalAccessException e) {
+            oscs = Dx7Oscillator.class.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
             throw new IllegalArgumentException(e);
         }
         oscs.setSampleRate(44100);
@@ -133,8 +157,7 @@ Debug.println("synthesizer: " + synthesizer);
     }
 
     @Test
-    @Disabled
-    @DisabledIfEnvironmentVariable(named = "GITHUB_WORKFLOW", matches = ".*")
+    @DisplayName("spi")
     void test3() throws Exception {
         Synthesizer synthesizer = MidiSystem.getSynthesizer();
 Debug.println("synthesizer: " + synthesizer.getClass().getName());
@@ -142,13 +165,9 @@ Debug.println("synthesizer: " + synthesizer.getClass().getName());
         synthesizer.unloadAllInstruments(synthesizer.getDefaultSoundbank());
         synthesizer.loadAllInstruments(new Dx7Oscillator());
 
-        String filename = "../../src/sano-n/vavi-apps-dx7/tmp/midi/minute_waltz.mid";
-//        String filename = "1/title-screen.mid";
-//        String filename = "1/overworld.mid";
-//        String filename = "1/m0057_01.mid";
-//        String filename = "1/ac4br_gm.MID";
-        File file = new File(System.getProperty("user.home"), "/Music/midi/" + filename);
-        Sequence seq = MidiSystem.getSequence(file);
+        Path file = Paths.get(midi);
+
+        Sequence seq = MidiSystem.getSequence(new BufferedInputStream(Files.newInputStream(file)));
 
         Sequencer sequencer = MidiSystem.getSequencer(false);
 Debug.println("sequencer: " + sequencer.getClass().getName());
@@ -157,12 +176,10 @@ Debug.println("sequencer: " + sequencer.getClass().getName());
         sequencer.getTransmitter().setReceiver(receiver);
 
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        MetaEventListener mel = new MetaEventListener() {
-            public void meta(MetaMessage meta) {
+        MetaEventListener mel = meta -> {
 System.err.println("META: " + meta.getType());
-                if (meta.getType() == 47) {
-                    countDownLatch.countDown();
-                }
+            if (meta.getType() == 47) {
+                countDownLatch.countDown();
             }
         };
         sequencer.setSequence(seq);
@@ -170,7 +187,15 @@ System.err.println("META: " + meta.getType());
 System.err.println("START");
         sequencer.start();
 
+        volume(receiver, volume); // gervill volume works!
+
+if (!System.getProperty("vavi.test", "").equals("ide")) {
+ Thread.sleep(10 * 1000);
+ sequencer.stop();
+ Debug.println("STOP");
+} else {
         countDownLatch.await();
+}
 System.err.println("END");
         sequencer.removeMetaEventListener(mel);
 
@@ -179,32 +204,24 @@ System.err.println("END");
         synthesizer.close();
     }
 
-    /**
-     *
-     * @param args
-     */
+    /** */
     public static void main(String[] args) throws Exception {
         t3(args);
     }
 
+    /** */
     public static void t3(String[] args) throws Exception {
-        final int n_samples = 20 * 1024;
-        final double sample_rate = 44100.0;
-        Freqlut.init(sample_rate);
-        Lfo.init(sample_rate);
-        PitchEnv.init(sample_rate);
+        final int nSamples = 20 * 1024;
+        final float sampleRate = 44100.0f;
         Instrument instrument = new Dx7Soundbank().getInstrument(new ModelPatch(0, 0, true));
 Debug.println(instrument.getName());
 
-        AudioFormat audioFormat = new AudioFormat((float) sample_rate, 16, 1, true, false);
+        AudioFormat audioFormat = new AudioFormat(sampleRate, 16, 1, true, false);
         DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, audioFormat, AudioSystem.NOT_SPECIFIED);
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
-        line.addLineListener(event -> { Debug.println(event.getType()); });
+        line.addLineListener(event -> Debug.println(event.getType()));
         line.open();
-FloatControl gainControl = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
-double gain = .2d; // number between 0 and 1 (loudest)
-float dB = (float) (Math.log(gain) / Math.log(10.0) * 20.0);
-gainControl.setValue(dB);
+        volume(line, volume);
         line.start();
 
 for (int m = 35; m < 82; m++) {
@@ -212,35 +229,34 @@ for (int m = 35; m < 82; m++) {
         byte[] x = ((byte[][]) instrument.getData())[m];
 Debug.println("drum: " + m);
 
-        Lfo.init(audioFormat.getSampleRate());
+        Context context = Context.getInstance(sampleRate);
 
-        Lfo lfo = new Lfo();
-        ResoFilter filter = new ResoFilter();
+        ResoFilter filter = new ResoFilter(context);
         int[] filterControl = new int[3];
         filterControl[0] = 258847126;
         filterControl[1] = 0;
         filterControl[2] = 0;
 
-        lfo.keydown();
-        Note note = new Note(x, 63, 100);
+        context.lfo.keyDown();
+        Note note = new Note(context, x, 63, 100);
         Note.Controllers controllers = new Note.Controllers(0x2000);
         int[] buf = new int[Note.N];
         int[] buf2 = new int[Note.N];
 
-        for (int i = 0; i < n_samples; i += Note.N) {
-            if (i >= n_samples * (7. / 8.)) {
-                note.keyup();
+        for (int i = 0; i < nSamples; i += Note.N) {
+            if (i >= nSamples * (7. / 8.)) {
+                note.keyUp();
             }
-            int lfoValue = lfo.getsample();
-            int lfoDelay = lfo.getdelay();
+            int lfoValue = context.lfo.getSample();
+            int lfoDelay = context.lfo.getDelay();
             note.compute(buf, lfoValue, lfoDelay, controllers);
-            final int[][] bufs = { buf };
+            int[][] bufs = { buf };
             int[][] bufs2 = { buf2 };
             filter.process(bufs, filterControl, filterControl, bufs2);
             for (int j = 0; j < Note.N; j++) {
                 buf2[j] >>= 2;
             }
-            write_data(line, buf2, Note.N);
+            writeData(line, buf2, Note.N);
         }
 }
         line.drain();
@@ -248,22 +264,16 @@ Debug.println("drum: " + m);
     }
 
     public static void t2(String[] args) throws Exception {
-        final int n_samples = 20 * 1024;
-        final double sample_rate = 44100.0;
-        Freqlut.init(sample_rate);
-        Lfo.init(sample_rate);
-        PitchEnv.init(sample_rate);
+        final int nSamples = 20 * 1024;
+        final float sampleRate = 44100.0f;
         Instrument[] instruments = new Dx7Soundbank().getInstruments();
 
-        AudioFormat audioFormat = new AudioFormat((float) sample_rate, 16, 1, true, false);
+        AudioFormat audioFormat = new AudioFormat(sampleRate, 16, 1, true, false);
         DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, audioFormat, AudioSystem.NOT_SPECIFIED);
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
-        line.addLineListener(event -> { Debug.println(event.getType()); });
+        line.addLineListener(event -> Debug.println(event.getType()));
         line.open();
-FloatControl gainControl = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
-double gain = .2d; // number between 0 and 1 (loudest)
-float dB = (float) (Math.log(gain) / Math.log(10.0) * 20.0);
-gainControl.setValue(dB);
+        volume(line, volume);
         line.start();
 
         Random r = new Random();
@@ -272,35 +282,34 @@ for (int m = 0; m < 128; m++) {
         byte[] x = (byte[]) instruments[m].getData();
 Debug.println(m + ": " + instruments[m].getName());
 
-        Lfo.init(audioFormat.getSampleRate());
+        Context context = Context.getInstance(audioFormat.getSampleRate());
 
-        Lfo lfo = new Lfo();
-        ResoFilter filter = new ResoFilter();
+        ResoFilter filter = new ResoFilter(context);
         int[] filterControl = new int[3];
         filterControl[0] = 258847126;
         filterControl[1] = 0;
         filterControl[2] = 0;
 
-        lfo.keydown();
-        Note note = new Note(x, 50 + (r.nextInt(12)), 100);
+        context.lfo.keyDown();
+        Note note = new Note(context, x, 50 + (r.nextInt(12)), 100);
         Note.Controllers controllers = new Note.Controllers(0x2000);
         int[] buf = new int[Note.N];
         int[] buf2 = new int[Note.N];
 
-        for (int i = 0; i < n_samples; i += Note.N) {
-            if (i >= n_samples * (7. / 8.)) {
-                note.keyup();
+        for (int i = 0; i < nSamples; i += Note.N) {
+            if (i >= nSamples * (7. / 8.)) {
+                note.keyUp();
             }
-            int lfoValue = lfo.getsample();
-            int lfoDelay = lfo.getdelay();
+            int lfoValue = context.lfo.getSample();
+            int lfoDelay = context.lfo.getDelay();
             note.compute(buf, lfoValue, lfoDelay, controllers);
-            final int[][] bufs = { buf };
+            int[][] bufs = { buf };
             int[][] bufs2 = { buf2 };
             filter.process(bufs, filterControl, filterControl, bufs2);
             for (int j = 0; j < Note.N; j++) {
                 buf2[j] >>= 2;
             }
-            write_data(line, buf2, Note.N);
+            writeData(line, buf2, Note.N);
         }
 }
         line.drain();
@@ -308,11 +317,8 @@ Debug.println(m + ": " + instruments[m].getName());
     }
 
     public static void t1(String[] args) throws Exception {
-        final int n_samples = 10 * 1024;
-        final double sample_rate = 44100.0;
-        Freqlut.init(sample_rate);
-        Lfo.init(sample_rate);
-        PitchEnv.init(sample_rate);
+        final int nSamples = 10 * 1024;
+        final float sampleRate = 44100.0f;
 
         int k = 1004;
 
@@ -324,15 +330,12 @@ Debug.println("patchs: " + n);
             dis.readFully(b[i]);
         }
 
-        AudioFormat audioFormat = new AudioFormat((float) sample_rate, 16, 1, true, false);
+        AudioFormat audioFormat = new AudioFormat(sampleRate, 16, 1, true, false);
         DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, audioFormat, AudioSystem.NOT_SPECIFIED);
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
-        line.addLineListener(event -> { Debug.println(event.getType()); });
+        line.addLineListener(event -> Debug.println(event.getType()));
         line.open();
-FloatControl gainControl = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
-double gain = .2d; // number between 0 and 1 (loudest)
-float dB = (float) (Math.log(gain) / Math.log(10.0) * 20.0);
-gainControl.setValue(dB);
+        volume(line, volume);
         line.start();
 
         Random r = new Random();
@@ -345,37 +348,36 @@ for (int m = 0; m < 20; m++) {
 Debug.println("patch: " + k / 32 + ", " + k % 32);
 Debug.println(x.length + "\n" + StringUtil.getDump(x));
 
-        Lfo.init(audioFormat.getSampleRate());
+        Context context = Context.getInstance(audioFormat.getSampleRate());
 
-        Lfo lfo = new Lfo();
-        ResoFilter filter = new ResoFilter();
+        ResoFilter filter = new ResoFilter(context);
         int[] filterControl = new int[3];
         filterControl[0] = 258847126;
         filterControl[1] = 0;
         filterControl[2] = 0;
 
-        lfo.keydown();
-        Note note = new Note(x, 50 + (r.nextInt(12)), 100);
+        context.lfo.keyDown();
+        Note note = new Note(context, x, 50 + (r.nextInt(12)), 100);
         Note.Controllers controllers = new Note.Controllers(0x2000);
         int[] buf = new int[Note.N];
         int[] buf2 = new int[Note.N];
 
-        for (int i = 0; i < n_samples; i += Note.N) {
-            if (i >= n_samples * (7. / 8.)) {
-                note.keyup();
+        for (int i = 0; i < nSamples; i += Note.N) {
+            if (i >= nSamples * (7. / 8.)) {
+                note.keyUp();
             }
-            int lfoValue = lfo.getsample();
-            int lfoDelay = lfo.getdelay();
+            int lfoValue = context.lfo.getSample();
+            int lfoDelay = context.lfo.getDelay();
             note.compute(buf, lfoValue, lfoDelay, controllers);
 //            note.compute(buf, 0, 0, controllers);
-            final int[][] bufs = { buf };
+            int[][] bufs = { buf };
             int[][] bufs2 = { buf2 };
             filter.process(bufs, filterControl, filterControl, bufs2);
             for (int j = 0; j < Note.N; j++) {
                 buf2[j] >>= 2;
 //                buf[j] >>= 2;
             }
-            write_data(line, buf2, Note.N);
+            writeData(line, buf2, Note.N);
         }
 }
         line.drain();
@@ -384,7 +386,7 @@ Debug.println(x.length + "\n" + StringUtil.getDump(x));
 
     static byte[] sample_buf = new byte[128];
 
-    static void write_data(SourceDataLine line, final int[] buf, int n) {
+    static void writeData(SourceDataLine line, int[] buf, int n) {
         int delta = 0x100;
         for (int i = 0; i < n; i++) {
             int val = buf[i];
@@ -396,5 +398,3 @@ Debug.println(x.length + "\n" + StringUtil.getDump(x));
         line.write(sample_buf, 0, n * 2);
     }
 }
-
-/* */

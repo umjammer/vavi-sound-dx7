@@ -6,10 +6,14 @@
 
 package vavi.sound.midi.dx7;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+import java.util.logging.Level;
 
 import javax.sound.midi.Instrument;
+import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiDevice;
 import javax.sound.midi.MidiMessage;
@@ -34,22 +38,39 @@ import vavi.util.StringUtil;
  * creating a synthesizer is too much for us. we need to reproduce
  * timing management, multiple voice management, mix down polyphony etc.
  * Gervill provides well considered sound system. what we need to do
- * is just to create a oscillator. see {@link Dx7Oscillator}.
+ * is just to create an oscillator. see {@link Dx7Oscillator}.
  *
  * @author <a href="mailto:umjammer@gmail.com">Naohide Sano</a> (umjammer)
  * @version 0.00 2020/10/31 umjammer initial version <br>
  */
 public class Dx7Synthesizer implements Synthesizer {
 
-    private static final String version = "0.0.2";
+    static {
+        try {
+            try (InputStream is = Dx7Synthesizer.class.getResourceAsStream("/META-INF/maven/vavi/vavi-sound-dx7/pom.properties")) {
+                if (is != null) {
+                    Properties props = new Properties();
+                    props.load(is);
+                    version = props.getProperty("version", "undefined in pom.properties");
+                } else {
+                    version = System.getProperty("vavi.test.version", "undefined");
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static final String version;
 
     /** the device information */
     protected static final MidiDevice.Info info =
         new MidiDevice.Info("DX7 MIDI Synthesizer",
-                            "Vavisoft",
+                            "vavi",
                             "Software synthesizer for DX7",
                             "Version " + version) {};
 
+    /** required gervill */
     private Synthesizer synthesizer;
 
     private Dx7Oscillator dx7Oscillator;
@@ -75,7 +96,11 @@ Debug.println("wrapped synthesizer: " + synthesizer.getClass().getName());
 
     @Override
     public boolean isOpen() {
-        return synthesizer.isOpen();
+        if (synthesizer != null) {
+            return synthesizer.isOpen();
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -212,37 +237,52 @@ Debug.println("receiver: " + this.receiver);
         @Override
         public void send(MidiMessage message, long timeStamp) {
 try {
-            if (message instanceof ShortMessage) {
-                ShortMessage shortMessage = (ShortMessage) message;
+            if (message instanceof ShortMessage shortMessage) {
                 int command = shortMessage.getCommand();
                 int data1 = shortMessage.getData1();
                 int data2 = shortMessage.getData2();
                 switch (command) {
-                case ShortMessage.CONTROL_CHANGE:
-                    dx7Oscillator.getDx7().controlChange(data1, data2);
-                    break;
+                    case ShortMessage.CONTROL_CHANGE -> dx7Oscillator.getDx7().controlChange(data1, data2);
                 }
-            } else if (message instanceof SysexMessage) {
-                SysexMessage sysexMessage = (SysexMessage) message;
+            } else if (message instanceof SysexMessage sysexMessage) {
                 byte[] data = sysexMessage.getData();
-//Debug.print("sysex:\n" + StringUtil.getDump(data));
 //Debug.printf(Level.FINE, "sysex: %02x %02x %02x", data[1], data[2], data[3]);
-                if (data[0] == 0x43) {
-                    if (data[1] == 0x00 && data[2] == 0x09 && data[3] == 0x20 && data[4] == 0x00) {
-                        if (data.length > 4096) {
+
+Debug.printf(Level.FINE, "sysex: %02X\n%s", sysexMessage.getStatus(), StringUtil.getDump(data));
+                switch (data[0]) {
+                    case 0x43 -> {
+                        switch (data[1]) {
+                            case 0x00 -> {
+                                switch (data[2]) {
+                                case 0x09: //
+                                    if (data[3] == 0x20 && data[4] == 0x00) { //
 Debug.println("sysex: bank change?");
-                        }
-                    } else if (data[1] == 0x00 && data[2] == 0x00 && data[3] == 0x01 && data[4] == 0x1b) {
-                        dx7Oscillator.getDx7().programChange(0, data, 5);
-                    } else {
-//                        Dx7Oscillator.getDx7().sysex(data);
+                                    }
+                                    break;
+                                case 0x00: //
+                                    if (data[3] == 0x01 && data[4] == 0x1b) {
+                                        dx7Oscillator.getDx7().programChange(0, data, 5);
+                                    }
+                                    break;
+                                } //
+                            }
+                        } // Yamaha
                     }
-                } else {
-Debug.println("sysex\n" + StringUtil.getDump(data));
+                    default -> {}
                 }
+
+                receiver.send(sysexMessage, timeStamp);
+            } else if (message instanceof MetaMessage metaMessage) {
+Debug.printf("meta: %02x", metaMessage.getType());
+                switch (metaMessage.getType()) {
+                    case 0x2f -> {}
+                }
+                receiver.send(message, timeStamp);
+            } else {
+                assert false;
             }
 } catch (Throwable t) {
- t.printStackTrace();
+ Debug.printStackTrace(t);
 }
             this.receiver.send(message, timeStamp);
         }
@@ -253,5 +293,3 @@ Debug.println("sysex\n" + StringUtil.getDump(data));
         }
     }
 }
-
-/* */

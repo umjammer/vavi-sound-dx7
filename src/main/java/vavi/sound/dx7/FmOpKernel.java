@@ -19,20 +19,20 @@ package vavi.sound.dx7;
 
 class FmOpKernel {
 
-    public static void compute(int[] output, final int[] input, int phase0, int freq, int gain1, int gain2, boolean add) {
-        int dgain = (gain2 - gain1 + (Note.N >> 1)) >> Note.LG_N;
+    public static void compute(int[] output, int[] input, int phase0, int freq, int gain1, int gain2, boolean add) {
+        int dGain = (gain2 - gain1 + (Note.N >> 1)) >> Note.LG_N;
         int gain = gain1;
         int phase = phase0;
         if (add) {
             for (int i = 0; i < Note.N; i++) {
-                gain += dgain;
+                gain += dGain;
                 int y = Sin.lookup(phase + input[i]);
                 output[i] += (int) (((long) y * (long) gain) >> 24);
                 phase += freq;
             }
         } else {
             for (int i = 0; i < Note.N; i++) {
-                gain += dgain;
+                gain += dGain;
                 int y = Sin.lookup(phase + input[i]);
                 output[i] = (int) (((long) y * (long) gain) >> 24);
                 phase += freq;
@@ -40,20 +40,20 @@ class FmOpKernel {
         }
     }
 
-    public static void compute_pure(int[] output, int phase0, int freq, int gain1, int gain2, boolean add) {
-        int dgain = (gain2 - gain1 + (Note.N >> 1)) >> Note.LG_N;
+    public static void computePure(int[] output, int phase0, int freq, int gain1, int gain2, boolean add) {
+        int dGain = (gain2 - gain1 + (Note.N >> 1)) >> Note.LG_N;
         int gain = gain1;
         int phase = phase0;
         if (add) {
             for (int i = 0; i < Note.N; i++) {
-                gain += dgain;
+                gain += dGain;
                 int y = Sin.lookup(phase);
                 output[i] += (int) (((long) y * (long) gain) >> 24);
                 phase += freq;
             }
         } else {
             for (int i = 0; i < Note.N; i++) {
-                gain += dgain;
+                gain += dGain;
                 int y = Sin.lookup(phase);
                 output[i] = (int) (((long) y * (long) gain) >> 24);
                 phase += freq;
@@ -61,15 +61,15 @@ class FmOpKernel {
         }
     }
 
-    public static void compute_fb(int[] output, int phase0, int freq, int gain1, int gain2, int[] fb_buf, int fb_shift, boolean add) {
-        int dgain = (gain2 - gain1 + (Note.N >> 1)) >> Note.LG_N;
+    public static void computeFb(int[] output, int phase0, int freq, int gain1, int gain2, int[] fbBuf, int fb_shift, boolean add) {
+        int dGain = (gain2 - gain1 + (Note.N >> 1)) >> Note.LG_N;
         int gain = gain1;
         int phase = phase0;
-        int y0 = fb_buf[0];
-        int y = fb_buf[1];
+        int y0 = fbBuf[0];
+        int y = fbBuf[1];
         if (add) {
             for (int i = 0; i < Note.N; i++) {
-                gain += dgain;
+                gain += dGain;
                 int scaled_fb = (y0 + y) >> (fb_shift + 1);
                 y0 = y;
                 y = Sin.lookup(phase + scaled_fb);
@@ -79,7 +79,7 @@ class FmOpKernel {
             }
         } else {
             for (int i = 0; i < Note.N; i++) {
-                gain += dgain;
+                gain += dGain;
                 int scaled_fb = (y0 + y) >> (fb_shift + 1);
                 y0 = y;
                 y = Sin.lookup(phase + scaled_fb);
@@ -88,7 +88,7 @@ class FmOpKernel {
                 phase += freq;
             }
         }
-        fb_buf[0] = y0;
-        fb_buf[1] = y;
+        fbBuf[0] = y0;
+        fbBuf[1] = y;
     }
 }
