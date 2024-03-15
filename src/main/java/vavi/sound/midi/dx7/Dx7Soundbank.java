@@ -161,5 +161,3 @@ Debug.printf("instrument not found for: %d.%d, %02x, %s", patch.getBank(), patch
         return ins;
     }
 }
-
-/* */

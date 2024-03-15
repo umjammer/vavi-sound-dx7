@@ -398,5 +398,3 @@ Debug.println(x.length + "\n" + StringUtil.getDump(x));
         line.write(sample_buf, 0, n * 2);
     }
 }
-
-/* */

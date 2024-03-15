@@ -165,5 +165,3 @@ Debug.println("control change: " + controller + ", " + value);
         controllers.values[controller] = value;
     }
 }
-
-/* */

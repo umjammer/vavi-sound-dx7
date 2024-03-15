@@ -110,5 +110,3 @@ Debug.println("Mean: " + (errsum * 1e-6));
         assertEquals(77.08, errsum * 1e-6, 0.015);
     }
 }
-
-/* */

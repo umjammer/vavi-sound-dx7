@@ -282,5 +282,3 @@ Debug.printf("meta: %02x", metaMessage.getType());
         }
     }
 }
-
-/* */

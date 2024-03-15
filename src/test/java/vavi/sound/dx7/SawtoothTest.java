@@ -101,5 +101,3 @@ class SawtoothTest {
         line.write(sampleBuf, 0, n * 2);
     }
 }
-
-/* */
