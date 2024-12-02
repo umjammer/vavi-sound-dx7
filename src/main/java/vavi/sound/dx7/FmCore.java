@@ -20,7 +20,7 @@ package vavi.sound.dx7;
 class FmCore {
 
     public static class FmOpParams {
-        int[] gain = new int[2];
+        final int[] gain = new int[2];
         int freq;
         int phase;
     }
@@ -39,7 +39,7 @@ class FmCore {
     private static final int FB_OUT = 1 << 7;
 
     private static class FmAlgorithm {
-        int[] ops = new int[6];
+        final int[] ops = new int[6];
         public FmAlgorithm(Integer... args) {
             int c = 0;
             for (int i : args) {
@@ -83,7 +83,7 @@ class FmCore {
         new FmAlgorithm(0xc4, 0x04, 0x04, 0x04, 0x04, 0x04), // 32
     };
 
-    private int n_out(FmAlgorithm alg) {
+    private static int n_out(FmAlgorithm alg) {
         int count = 0;
         for (int i = 0; i < 6; i++) {
             if ((alg.ops[i] & 7) == OUT_BUS_ADD)
@@ -137,14 +137,14 @@ class FmCore {
                 if (inBus == 0 || !hasContents[inBus]) {
                     // TODO more than one op in a feedback loop
                     if ((flags & 0xc0) == 0xc0 && feedbackShift < 16) {
-                        // Debug.println(op + " fb " + inBus + outBus + add);
+                        // logger.log(Level.DEBUG, op + " fb " + inBus + outBus + add);
                         FmOpKernel.computeFb(outPtr, param.phase, param.freq, gain1, gain2, fbBuf, feedbackShift, add);
                     } else {
-                        // Debug.println(op + " pure " + inBus + outBus + add);
+                        // logger.log(Level.DEBUG, op + " pure " + inBus + outBus + add);
                         FmOpKernel.computePure(outPtr, param.phase, param.freq, gain1, gain2, add);
                     }
                 } else {
-                    // Debug.println(op + " normal " + inBus + outBus + " " + param.freq + add);
+                    // logger.log(Level.DEBUG, op + " normal " + inBus + outBus + " " + param.freq + add);
                     FmOpKernel.compute(outPtr, outPtr, param.phase, param.freq, gain1, gain2, add); // TODO 2nd outPtr
                 }
                 hasContents[outBus] = true;

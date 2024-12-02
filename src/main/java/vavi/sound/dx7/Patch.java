@@ -16,13 +16,18 @@
 
 package vavi.sound.dx7;
 
-import vavi.util.Debug;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
+
+import static java.lang.System.getLogger;
 
 
 /**
  * @see "https://github.com/asb2m10/dexed/blob/master/Documentation/sysex-format.txt"
  */
 class Patch {
+
+    private static final Logger logger = getLogger(Patch.class.getName());
 
     public static void unpackPatch(byte[] bulk, byte[] patch) {
         for (int op = 0; op < 6; op++) {
@@ -66,7 +71,7 @@ class Patch {
     private static byte clamp(byte byte_, int pos, byte max) {
         if (byte_ > max || byte_ < 0) {
             clamped++;
-            Debug.printf("file %d clamped %d pos %d was %d is %d\n", fileClamped, clamped, pos, byte_, max);
+            logger.log(Level.DEBUG, "file %d clamped %d pos %d was %d is %d\n", fileClamped, clamped, pos, byte_, max);
             return max;
         }
         return byte_;

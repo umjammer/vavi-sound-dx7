@@ -22,7 +22,7 @@ class Exp2 {
     private static final int EXP2_LG_N_SAMPLES = 10;
     private static final int EXP2_N_SAMPLES = 1 << EXP2_LG_N_SAMPLES;
 
-    private static int[] exp2Tab = new int[EXP2_N_SAMPLES << 1];
+    private static final int[] exp2Tab = new int[EXP2_N_SAMPLES << 1];
 
     static {
         double inc = Math.pow(2, 1.0 / EXP2_N_SAMPLES);
@@ -53,7 +53,7 @@ class Tanh {
     private static final int TANH_LG_N_SAMPLES = 10;
     private static final int TANH_N_SAMPLES = 1 << TANH_LG_N_SAMPLES;
 
-    private static int[] tanhTab = new int[TANH_N_SAMPLES << 1];
+    private static final int[] tanhTab = new int[TANH_N_SAMPLES << 1];
 
     static {
         double step = 4.0 / TANH_N_SAMPLES;

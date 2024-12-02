@@ -6,12 +6,13 @@
 
 package vavi.sound.midi.dx7;
 
-import java.util.logging.Level;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 
 import javax.sound.midi.MidiDevice;
 import javax.sound.midi.spi.MidiDeviceProvider;
 
-import vavi.util.Debug;
+import static java.lang.System.getLogger;
 
 
 /**
@@ -22,7 +23,9 @@ import vavi.util.Debug;
  */
 public class Dx7MidiDeviceProvider extends MidiDeviceProvider {
 
-    /**  */
+    private static final Logger logger = getLogger(Dx7MidiDeviceProvider.class.getName());
+
+    /** */
     public final static int MANUFACTURER_ID = 0x43;
 
     /** */
@@ -38,11 +41,11 @@ public class Dx7MidiDeviceProvider extends MidiDeviceProvider {
         throws IllegalArgumentException {
 
         if (info == Dx7Synthesizer.info) {
-Debug.println(Level.FINE, "★1 info: " + info);
+logger.log(Level.DEBUG, "★1 info: " + info);
             Dx7Synthesizer synthesizer = new Dx7Synthesizer();
             return synthesizer;
         } else {
-Debug.println(Level.FINE, "★1 here: " + info);
+logger.log(Level.DEBUG, "★1 here: " + info);
             throw new IllegalArgumentException();
         }
     }

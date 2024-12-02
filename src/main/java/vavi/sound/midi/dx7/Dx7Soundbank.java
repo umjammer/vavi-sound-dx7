@@ -9,6 +9,8 @@ package vavi.sound.midi.dx7;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -21,7 +23,7 @@ import javax.sound.midi.SoundbankResource;
 import com.sun.media.sound.ModelPatch;
 import com.sun.media.sound.SimpleInstrument;
 
-import vavi.util.Debug;
+import static java.lang.System.getLogger;
 
 
 /**
@@ -32,6 +34,8 @@ import vavi.util.Debug;
  */
 @SuppressWarnings("restriction")
 public class Dx7Soundbank implements Soundbank {
+
+    private static final Logger logger = getLogger(Dx7Soundbank.class.getName());
 
     /** */
     public static class Dx7Instrument extends SimpleInstrument {
@@ -63,16 +67,16 @@ public class Dx7Soundbank implements Soundbank {
         }
     }
 
-    private static byte[][] b;
+    private static final byte[][] b;
 
     /** */
-    private static Map<String, Instrument> instruments = new HashMap<>();
+    private static final Map<String, Instrument> instruments = new HashMap<>();
 
     static {
         try {
             DataInputStream dis = new DataInputStream(Dx7Soundbank.class.getResourceAsStream("/unpacked.bin"));
             int n = dis.available() / 156;
-Debug.println("patchs: " + n);
+logger.log(Level.DEBUG, "patchs: " + n);
             b = new byte[n][156];
             for (int i = 0; i < n; i++) {
                 dis.readFully(b[i]);
@@ -134,11 +138,11 @@ Debug.println("patchs: " + n);
         return instruments.values().toArray(new Instrument[0]);
     }
 
-    private Map<String, Instrument> emergencies = new HashMap<>();
+    private final Map<String, Instrument> emergencies = new HashMap<>();
 
     @Override
     public Instrument getInstrument(Patch patch) {
-//Debug.println("patch: " + patch.getBank() + "," + patch.getProgram() + ", " + patch.getClass().getName());
+//logger.log(Level.DEBUG, "patch: " + patch.getBank() + "," + patch.getProgram() + ", " + patch.getClass().getName());
         Instrument ins;
         boolean isPercussion = patch instanceof ModelPatch && ((ModelPatch) patch).isPercussion();
         String k = (isPercussion ? "p." : "") + patch.getBank() + "." + patch.getProgram();
@@ -147,7 +151,7 @@ Debug.println("patchs: " + n);
         } else if (emergencies.containsKey(k)) {
             ins = emergencies.get(k);
         } else {
-Debug.printf("instrument not found for: %d.%d, %02x, %s", patch.getBank(), patch.getProgram(), (patch.getBank() >> 7), isPercussion);
+logger.log(Level.DEBUG, "instrument not found for: %d.%d, %02x, %s", patch.getBank(), patch.getProgram(), (patch.getBank() >> 7), isPercussion);
             Instrument emergency;
             if (patch.getBank() >> 7 == 0x7f || patch.getBank() >> 7 == 0x78 || isPercussion) { // TODO check spec.
                 emergency = instruments.get("p.0.0");
@@ -157,7 +161,7 @@ Debug.printf("instrument not found for: %d.%d, %02x, %s", patch.getBank(), patch
             emergencies.put(k, emergency);
             ins = emergency;
         }
-//Debug.println("instrument: " + ins.getPatch().getBank() + ", " + ins.getPatch().getProgram() + ", " + ins.getName());
+//logger.log(Level.DEBUG, "instrument: " + ins.getPatch().getBank() + ", " + ins.getPatch().getProgram() + ", " + ins.getName());
         return ins;
     }
 }

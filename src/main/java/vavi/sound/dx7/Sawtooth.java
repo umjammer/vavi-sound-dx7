@@ -16,14 +16,17 @@
 
 package vavi.sound.dx7;
 
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 
-import vavi.util.Debug;
+import static java.lang.System.getLogger;
 
 
 class Sawtooth {
+
+    private static final Logger logger = getLogger(Sawtooth.class.getName());
 
     @SuppressWarnings("unused")
     private static final int R = 1 << 29;
@@ -40,11 +43,11 @@ class Sawtooth {
     private static final int LOW_FREQ_LIMIT = -SLICE_BASE;
     private static final double NEG2OVER_PI = -0.63661977236758138;
 
-    private int[][] sawTooth = new int[N_SLICES][N_SAMPLES];
+    private final int[][] sawTooth = new int[N_SLICES][N_SAMPLES];
 
     private static int sawToothFreqOff;
 
-    private static Map<Double, Sawtooth> instances = new HashMap<>();
+    private static final Map<Double, Sawtooth> instances = new HashMap<>();
 
     public static Sawtooth getInstance(double sampleRate) {
         if (instances.containsKey(sampleRate)) {
@@ -91,7 +94,7 @@ class Sawtooth {
                 }
                 int ds = (int) Math.floor((1 << dShift) * dsD + 0.5);
                 int cm2 = (int) Math.floor((1 << dShift) * cm2D + 0.5);
-                // Debug.println(cm2D + " " + cm2 + " " + dPhase + " " + ds + " " + dShift);
+                // logger.log(Level.DEBUG, cm2D + " " + cm2 + " " + dPhase + " " + ds + " " + dShift);
                 int s = 0;
                 int round = (1 << dShift) >> 1;
                 for (int i = 0; i < N_SAMPLES / 2; i++) {
@@ -103,7 +106,7 @@ class Sawtooth {
                     ds += (int) (((long) cm2 * (long) s + (1 << 28)) >> 29);
                     s += (ds + round) >> dShift;
                 }
-                Debug.println(Level.FINE, maxErr);
+                logger.log(Level.DEBUG, maxErr);
             }
             sawTooth[j][0] = 0;
             sawTooth[j][N_SAMPLES / 2] = 0;
@@ -124,7 +127,7 @@ class Sawtooth {
         init(sampleRate);
     }
 
-    private int compute(int phase) {
+    private static int compute(int phase) {
         return phase * 2 - (1 << 24);
     }
 

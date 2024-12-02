@@ -22,7 +22,7 @@ class Sin {
     private static final int SIN_N_SAMPLES = 1 << SIN_LG_N_SAMPLES;
     private static final int R = 1 << 29;
 
-    private static int[] sinTab = new int[SIN_N_SAMPLES << 1];
+    private static final int[] sinTab = new int[SIN_N_SAMPLES << 1];
 
     static {
         double dPhase = 2 * Math.PI / SIN_N_SAMPLES;
