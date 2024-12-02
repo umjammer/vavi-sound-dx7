@@ -66,7 +66,11 @@ public class Dx7SynthesizerTest {
         return Files.exists(Paths.get("local.properties"));
     }
 
-    static final float volume = Float.parseFloat(System.getProperty("vavi.test.volume.midi",  "0.2"));
+    @Property(name = "vavi.test.volume.midi")
+    float midiVolume = 0.2f;
+
+    @Property(name = "vavi.test.volume")
+    double volume = 0.02;
 
     @BeforeEach
     void setup() throws IOException {
@@ -76,7 +80,6 @@ public class Dx7SynthesizerTest {
     }
 
     @Property(name = "test.midi")
-    final
     String midi = "src/test/resources/test.mid";
 
     @Test
@@ -98,17 +101,17 @@ Debug.println("sequencer: " + sequencer.getClass().getName());
 
         CountDownLatch countDownLatch = new CountDownLatch(1);
         MetaEventListener mel = meta -> {
-//System.err.println("META: " + meta.getType());
+//Debug.println("META: " + meta.getType());
             if (meta.getType() == 47) {
                 countDownLatch.countDown();
             }
         };
         sequencer.setSequence(seq);
         sequencer.addMetaEventListener(mel);
-System.err.println("START");
+Debug.println("START");
         sequencer.start();
 
-        volume(receiver, volume); // gervill volume works!
+        volume(receiver, midiVolume); // gervill volume works!
 
 if (!System.getProperty("vavi.test", "").equals("ide")) {
  Thread.sleep(10 * 1000);
@@ -117,7 +120,7 @@ if (!System.getProperty("vavi.test", "").equals("ide")) {
 } else {
         countDownLatch.await();
 }
-System.err.println("END");
+Debug.println("END");
         sequencer.removeMetaEventListener(mel);
         sequencer.close();
 
@@ -130,7 +133,7 @@ System.err.println("END");
         synthesizer.open();
 Debug.println("synthesizer: " + synthesizer);
 
-        volume(synthesizer.getReceiver(), volume); // gervill volume works!
+        volume(synthesizer.getReceiver(), midiVolume); // gervill volume works!
 
         MidiChannel channel = synthesizer.getChannels()[0];
         for (int i = 0; i < 32; i++) {
@@ -188,7 +191,7 @@ System.err.println("META: " + meta.getType());
 System.err.println("START");
         sequencer.start();
 
-        volume(receiver, volume); // gervill volume works!
+        volume(receiver, midiVolume); // gervill volume works!
 
 if (!System.getProperty("vavi.test", "").equals("ide")) {
  Thread.sleep(10 * 1000);
@@ -207,11 +210,13 @@ System.err.println("END");
 
     /** */
     public static void main(String[] args) throws Exception {
-        t3(args);
+        Dx7SynthesizerTest app = new Dx7SynthesizerTest();
+        app.setup();
+        app.t3(args);
     }
 
     /** */
-    public static void t3(String[] args) throws Exception {
+    public void t3(String[] args) throws Exception {
         final int nSamples = 20 * 1024;
         final float sampleRate = 44100.0f;
         Instrument instrument = new Dx7Soundbank().getInstrument(new ModelPatch(0, 0, true));
@@ -264,7 +269,7 @@ Debug.println("drum: " + m);
         line.close();
     }
 
-    public static void t2(String[] args) throws Exception {
+    public void t2(String[] args) throws Exception {
         final int nSamples = 20 * 1024;
         final float sampleRate = 44100.0f;
         Instrument[] instruments = new Dx7Soundbank().getInstruments();
@@ -317,7 +322,7 @@ Debug.println(m + ": " + instruments[m].getName());
         line.close();
     }
 
-    public static void t1(String[] args) throws Exception {
+    public void t1(String[] args) throws Exception {
         final int nSamples = 10 * 1024;
         final float sampleRate = 44100.0f;
 

@@ -184,7 +184,7 @@ public class FilerTest {
 
         double elapsed = System.currentTimeMillis() - start;
         double nsPerSample = 1e9 * elapsed / nBuf / niter;
-        Debug.printf("fm op kernel: %f ms/sample\n", nsPerSample);
+Debug.printf("fm op kernel: %f ms/sample\n", nsPerSample);
     }
 
     @Test
@@ -212,7 +212,7 @@ public class FilerTest {
 
             double elapsed = System.currentTimeMillis() - start;
             double nsPerSample = 1e9 * elapsed / nBuf / niter;
-            Debug.printf("sawtooth %gHz: %f ms/sample\n", f, nsPerSample);
+Debug.printf("sawtooth %gHz: %f ms/sample\n", f, nsPerSample);
         }
     }
 
@@ -250,7 +250,7 @@ public class FilerTest {
 
             double elapsed = System.currentTimeMillis() - start;
             double nsPerSample = 1e9 * elapsed / nBuf / niter;
-            Debug.printf("ladder %s: %f ms/sample\n", nl != 0 ? "nonlinear" : "linear", nsPerSample);
+Debug.printf("ladder %s: %f ms/sample\n", nl != 0 ? "nonlinear" : "linear", nsPerSample);
         }
     }
 }
