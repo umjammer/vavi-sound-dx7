@@ -7,7 +7,8 @@
 package vavi.sound.midi.dx7;
 
 import java.io.IOException;
-import java.util.logging.Level;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 
 import javax.sound.midi.Instrument;
 import javax.sound.midi.MidiChannel;
@@ -17,9 +18,9 @@ import javax.sound.midi.VoiceStatus;
 import com.sun.media.sound.ModelAbstractOscillator;
 import com.sun.media.sound.SimpleInstrument;
 
-import vavi.util.Debug;
-
 import com.sun.media.sound.ModelPatch;
+
+import static java.lang.System.getLogger;
 
 
 /**
@@ -31,26 +32,28 @@ import com.sun.media.sound.ModelPatch;
 @SuppressWarnings("restriction")
 public class Dx7Oscillator extends ModelAbstractOscillator {
 
-    private static Dx7Soundbank soundbank;
+    private static final Logger logger = getLogger(Dx7Oscillator.class.getName());
+
+    private static final Dx7Soundbank soundbank;
 
     static {
         soundbank = new Dx7Soundbank();
     }
 
     /** */
-    private Dx7 dx7 = new Dx7();
+    private final Dx7 dx7 = new Dx7();
 
     public Dx7 getDx7() {
         return dx7;
     }
 
     // Extra buffering for when GetSamples wants a buffer not a multiple of N
-    private float[] extraBuf = new float[Dx7.BUFFER_SIZE];
+    private final float[] extraBuf = new float[Dx7.BUFFER_SIZE];
     private int extraBufSize;
 
     @Override
     public void init() {
-//Debug.println("init");
+//logger.log(Level.DEBUG, "init");
         super.init();
     }
 
@@ -77,7 +80,7 @@ public class Dx7Oscillator extends ModelAbstractOscillator {
     @Override
     public void noteOn(MidiChannel channel, VoiceStatus voice, int noteNumber, int velocity) {
         if (velocity > 0) {
-//Debug.println("channel: " + voice.channel + ", patch: " + voice.bank + "," + voice.program);
+//logger.log(Level.DEBUG, "channel: " + voice.channel + ", patch: " + voice.bank + "," + voice.program);
 try {
             // TODO how to define drums
             if (voice.channel != 9) {
@@ -87,7 +90,7 @@ try {
                 dx7.noteOn(drums[noteNumber], noteNumber, velocity);
             }
 } catch (Throwable t) {
- Debug.println(Level.SEVERE, "ch: " + voice.channel + ", note: " + noteNumber);
+ logger.log(Level.ERROR, "ch: " + voice.channel + ", note: " + noteNumber);
 }
             super.noteOn(channel, voice, noteNumber, velocity);
         } else {
@@ -105,7 +108,7 @@ try {
     /**
      * Dx7.BUFFER_SIZE = 64, len = 300
      *
-     * @see com.sun.media.sound.SoftVoice#processControlLogic()
+     * @see "com.sun.media.sound.SoftVoice#processControlLogic()"
      */
     @Override
     public int read(float[][] buffers, int offset, int len) throws IOException {

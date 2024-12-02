@@ -6,14 +6,19 @@
 
 package vavi.sound.dx7;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.SourceDataLine;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import vavi.util.Debug;
+import vavi.util.properties.annotation.Property;
+import vavi.util.properties.annotation.PropsEntity;
 
 import static vavi.sound.SoundUtil.volume;
 
@@ -24,9 +29,23 @@ import static vavi.sound.SoundUtil.volume;
  * @author <a href="mailto:umjammer@gmail.com">Naohide Sano</a> (umjammer)
  * @version 0.00 2020/10/31 umjammer initial version <br>
  */
+@PropsEntity(url = "file:local.properties")
 class SawtoothTest {
 
-    static double volume = Double.parseDouble(System.getProperty("vavi.test.volume",  "0.2"));
+    static boolean localPropertiesExists() {
+        return Files.exists(Paths.get("local.properties"));
+    }
+
+    @Property(name = "vavi.test.volume")
+    final
+    double volume = 0.2;
+
+    @BeforeEach
+    void setup() throws Exception {
+        if (localPropertiesExists()) {
+            PropsEntity.Util.bind(this);
+        }
+    }
 
     @Test
     void test() throws Exception {
@@ -87,7 +106,7 @@ class SawtoothTest {
         line.close();
     }
 
-    static byte[] sampleBuf = new byte[128];
+    static final byte[] sampleBuf = new byte[128];
 
     static void writeData(SourceDataLine line, int[] buf, int n) {
         int delta = 0x100;

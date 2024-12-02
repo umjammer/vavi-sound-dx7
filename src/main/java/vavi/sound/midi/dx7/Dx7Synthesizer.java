@@ -7,10 +7,11 @@
 package vavi.sound.midi.dx7;
 
 import java.io.InputStream;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Level;
 
 import javax.sound.midi.Instrument;
 import javax.sound.midi.MetaMessage;
@@ -28,8 +29,9 @@ import javax.sound.midi.Transmitter;
 import javax.sound.midi.VoiceStatus;
 
 import vavi.sound.midi.MidiUtil;
-import vavi.util.Debug;
 import vavi.util.StringUtil;
+
+import static java.lang.System.getLogger;
 
 
 /**
@@ -44,6 +46,8 @@ import vavi.util.StringUtil;
  * @version 0.00 2020/10/31 umjammer initial version <br>
  */
 public class Dx7Synthesizer implements Synthesizer {
+
+    private static final Logger logger = getLogger(Dx7Synthesizer.class.getName());
 
     static {
         try {
@@ -83,7 +87,7 @@ public class Dx7Synthesizer implements Synthesizer {
     @Override
     public void open() throws MidiUnavailableException {
         synthesizer = MidiUtil.getDefaultSynthesizer(Dx7MidiDeviceProvider.class);
-Debug.println("wrapped synthesizer: " + synthesizer.getClass().getName());
+logger.log(Level.DEBUG, "wrapped synthesizer: " + synthesizer.getClass().getName());
         synthesizer.open();
         synthesizer.unloadAllInstruments(synthesizer.getDefaultSoundbank());
         synthesizer.loadAllInstruments(dx7Oscillator = new Dx7Oscillator());
@@ -222,16 +226,16 @@ Debug.println("wrapped synthesizer: " + synthesizer.getClass().getName());
 
     }
 
-    private List<Receiver> receivers = new ArrayList<>();
+    private final List<Receiver> receivers = new ArrayList<>();
 
     // TODO move into DX7 class?
     private class Dx7Receiver implements Receiver {
-        Receiver receiver;
+        final Receiver receiver;
 
         public Dx7Receiver(Receiver receiver) {
             receivers.add(this);
             this.receiver = receiver;
-Debug.println("receiver: " + this.receiver);
+logger.log(Level.DEBUG, "receiver: " + this.receiver);
         }
 
         @Override
@@ -246,9 +250,9 @@ try {
                 }
             } else if (message instanceof SysexMessage sysexMessage) {
                 byte[] data = sysexMessage.getData();
-//Debug.printf(Level.FINE, "sysex: %02x %02x %02x", data[1], data[2], data[3]);
+//logger.log(Level.DEBUG, "sysex: %02x %02x %02x", data[1], data[2], data[3]);
 
-Debug.printf(Level.FINE, "sysex: %02X\n%s", sysexMessage.getStatus(), StringUtil.getDump(data));
+logger.log(Level.DEBUG, "sysex: %02X\n%s", sysexMessage.getStatus(), StringUtil.getDump(data));
                 switch (data[0]) {
                     case 0x43 -> {
                         switch (data[1]) {
@@ -256,7 +260,7 @@ Debug.printf(Level.FINE, "sysex: %02X\n%s", sysexMessage.getStatus(), StringUtil
                                 switch (data[2]) {
                                 case 0x09: //
                                     if (data[3] == 0x20 && data[4] == 0x00) { //
-Debug.println("sysex: bank change?");
+logger.log(Level.DEBUG, "sysex: bank change?");
                                     }
                                     break;
                                 case 0x00: //
@@ -273,7 +277,7 @@ Debug.println("sysex: bank change?");
 
                 receiver.send(sysexMessage, timeStamp);
             } else if (message instanceof MetaMessage metaMessage) {
-Debug.printf("meta: %02x", metaMessage.getType());
+logger.log(Level.DEBUG, "meta: %02x", metaMessage.getType());
                 switch (metaMessage.getType()) {
                     case 0x2f -> {}
                 }
@@ -282,7 +286,7 @@ Debug.printf("meta: %02x", metaMessage.getType());
                 assert false;
             }
 } catch (Throwable t) {
- Debug.printStackTrace(t);
+ logger.log(Level.DEBUG, t);
 }
             this.receiver.send(message, timeStamp);
         }

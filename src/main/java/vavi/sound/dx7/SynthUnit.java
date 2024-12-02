@@ -16,15 +16,19 @@
 
 package vavi.sound.dx7;
 
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import vavi.util.Debug;
+import static java.lang.System.getLogger;
 
 
 public class SynthUnit {
+
+    private static final Logger logger = getLogger(SynthUnit.class.getName());
 
     private static final byte[] epiano2 = {
         95, 29, 20, 50, 99, 95, 0, 0, 41, 0, 19, 0, 115, 24, 79, 2, 0, 95, 20, 20, 50, 99, 95, 0, 0, 0, 0, 0, 0, 3, 0, 99, 2, 0,
@@ -43,29 +47,29 @@ public class SynthUnit {
 //        int channel;
     }
 
-    private BlockingDeque<Integer> deque;
+    private final BlockingDeque<Integer> deque;
     private long timestump;
 
     private static final int MAX_ACTIVE_NOTES = 16;
-    private ActiveNote[] activeNote = new ActiveNote[MAX_ACTIVE_NOTES];
+    private final ActiveNote[] activeNote = new ActiveNote[MAX_ACTIVE_NOTES];
     private int currentNote;
 
-    private byte[] patchData = new byte[156];
+    private final byte[] patchData = new byte[156];
 
-    private Context context;
+    private final Context context;
 
     // in MIDI units (0x4000 is neutral)
-    private Note.Controllers controllers;
+    private final Note.Controllers controllers;
 
-    private ResoFilter filter;
-    private int[] filterControl = new int[3];
+    private final ResoFilter filter;
+    private final int[] filterControl = new int[3];
     private boolean sustain;
 
     // Extra buffering for when GetSamples wants a buffer not a multiple of N
-    private int[] extraBuf = new int[Note.N];
+    private final int[] extraBuf = new int[Note.N];
     private int extraBufSize;
 
-    private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     public void close() {
         executor.shutdown();
@@ -94,7 +98,7 @@ public class SynthUnit {
         context = Context.getInstance(sampleRate);
         filter = new ResoFilter(context);
 
-        Debug.println("period: " + (int) (1000.0 * Note.N / 44100.0));
+        logger.log(Level.DEBUG, "period: " + (int) (1000.0 * Note.N / 44100.0));
         executor.scheduleAtFixedRate(this::process, 1000, (int) (1000.0 * Note.N / 44100.0), TimeUnit.MILLISECONDS);
     }
 
@@ -107,7 +111,7 @@ public class SynthUnit {
             }
             note = (note + 1) % MAX_ACTIVE_NOTES;
         }
-Debug.println("allocateNote: max");
+logger.log(Level.DEBUG, "allocateNote: max");
         return -1;
     }
 
@@ -118,11 +122,11 @@ Debug.println("allocateNote: max");
 
         byte[] name = new byte[10];
         System.arraycopy(patchData, 145, name, 0, 10);
-        Debug.println("Loaded patch " + p + ": " + new String(name, 0, 10));
+        logger.log(Level.DEBUG, "Loaded patch " + p + ": " + new String(name, 0, 10));
     }
 
     public void noteOff(int noteNumber) {
-//Debug.println("note off: " + noteNumber);
+//logger.log(Level.DEBUG, "note off: " + noteNumber);
         for (int note = 0; note < MAX_ACTIVE_NOTES; ++note) {
             if (activeNote[note].midiNote == noteNumber && activeNote[note].keyDown) {
                 if (sustain) {
@@ -140,7 +144,7 @@ Debug.println("allocateNote: max");
             noteOff(noteNumber);
             return;
         }
-//Debug.println("note on: " + noteNumber + ", " + velocity);
+//logger.log(Level.DEBUG, "note on: " + noteNumber + ", " + velocity);
         int noteIx = allocateNote();
         if (noteIx >= 0) {
             context.lfo.keyDown(); // TODO: should only do this if # keys down was 0
@@ -173,12 +177,12 @@ Debug.println("allocateNote: max");
             }
         }
         controllers.values[controller] = value;
-//Debug.println("control change: " + controller + ", " + value);
+//logger.log(Level.DEBUG, "control change: " + controller + ", " + value);
     }
 
     public void pitchBend(int data1, int data2) {
         controlChange(Note.kControllerPitch, data1 | (data2 << 7));
-//Debug.println("pitch bend: " + data1 + ", " + data2);
+//logger.log(Level.DEBUG, "pitch bend: " + data1 + ", " + data2);
     }
 
     public void sysex(byte[] b) {
@@ -223,7 +227,7 @@ Debug.println("allocateNote: max");
             }
         }
         extraBufSize = i - nSamples;
-//Debug.println("extra: " + (i - nSamples));
+//logger.log(Level.DEBUG, "extra: " + (i - nSamples));
     }
 
     public void process() {
@@ -268,6 +272,6 @@ Debug.println("allocateNote: max");
             }
         }
         extraBufSize = i - nSamples;
-//Debug.println("deque: " + deque.size());
+//logger.log(Level.DEBUG, "deque: " + deque.size());
     }
 }

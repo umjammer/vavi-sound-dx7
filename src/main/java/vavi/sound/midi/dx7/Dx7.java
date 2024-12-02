@@ -6,13 +6,16 @@
 
 package vavi.sound.midi.dx7;
 
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.List;
 
 import vavi.sound.dx7.Context;
 import vavi.sound.dx7.Note;
 import vavi.sound.dx7.ResoFilter;
-import vavi.util.Debug;
+
+import static java.lang.System.getLogger;
 
 
 /**
@@ -22,6 +25,9 @@ import vavi.util.Debug;
  * @version 0.00 2020/11/07 umjammer initial version <br>
  */
 class Dx7 {
+
+    private static final Logger logger = getLogger(Dx7.class.getName());
+
     static final int BUFFER_SIZE = Note.N;
 
     private static class ActiveNote {
@@ -32,11 +38,11 @@ class Dx7 {
     }
 
     // in MIDI units (0x4000 is neutral)
-    private Note.Controllers controllers;
+    private final Note.Controllers controllers;
 
     private ResoFilter filter;
 
-    private int[] filterControl = new int[3];
+    private final int[] filterControl = new int[3];
 
     // TODO should be use the value in SoftVoice?
     private boolean sustain;
@@ -57,17 +63,17 @@ class Dx7 {
             filter = new ResoFilter(context);
         }
         if (this.context.sampleRate != sampleRate) {
-Debug.println("sampleRate: " + sampleRate);
+logger.log(Level.DEBUG, "sampleRate: " + sampleRate);
             this.context.setSampleRate(sampleRate);
         }
     }
 
-    private static List<Dx7.ActiveNote> activeNotes = new ArrayList<>();
+    private static final List<Dx7.ActiveNote> activeNotes = new ArrayList<>();
 
     private Dx7.ActiveNote activeNote;
 
-    private int[] audioBuf = new int[BUFFER_SIZE];
-    private int[] audioBuf2 = new int[BUFFER_SIZE];
+    private final int[] audioBuf = new int[BUFFER_SIZE];
+    private final int[] audioBuf2 = new int[BUFFER_SIZE];
 
     void write(int offset, int len, int i, float[] buffer, float[] extraBuf) {
         int lfoValue = context.lfo.getSample();
@@ -127,7 +133,7 @@ Debug.println("sampleRate: " + sampleRate);
         System.arraycopy(patch, ofs, b, 0, b.length);
         context.lfo.reset(b, 137);
 
-Debug.println("Loaded patch " + p + ": " + new String(b, 145, 10));
+logger.log(Level.DEBUG, "Loaded patch " + p + ": " + new String(b, 145, 10));
     }
 
     public void sysex(byte[] b) {
@@ -138,15 +144,15 @@ Debug.println("Loaded patch " + p + ": " + new String(b, 145, 10));
         switch (controller) {
         case 1:
             filterControl[0] = 142365917 + value * 917175;
-Debug.println("control change: " + controller + ", " + value);
+logger.log(Level.DEBUG, "control change: " + controller + ", " + value);
             break;
         case 2:
             filterControl[1] = value * 528416;
-Debug.println("control change: " + controller + ", " + value);
+logger.log(Level.DEBUG, "control change: " + controller + ", " + value);
             break;
         case 3:
             filterControl[2] = value * 528416;
-Debug.println("control change: " + controller + ", " + value);
+logger.log(Level.DEBUG, "control change: " + controller + ", " + value);
             break;
         case 64:
             sustain = value != 0;
@@ -159,7 +165,7 @@ Debug.println("control change: " + controller + ", " + value);
                     }
                 }
             }
-Debug.println("control change: " + controller + ", " + value);
+logger.log(Level.DEBUG, "control change: " + controller + ", " + value);
             break;
         }
         controllers.values[controller] = value;

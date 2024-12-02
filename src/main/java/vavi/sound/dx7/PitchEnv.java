@@ -19,8 +19,8 @@ package vavi.sound.dx7;
 
 public class PitchEnv {
 
-    private int[] rates = new int[4];
-    private int[] levels = new int[4];
+    private final int[] rates = new int[4];
+    private final int[] levels = new int[4];
     private int level;
     private int targetLevel;
     private boolean rising;
@@ -29,7 +29,7 @@ public class PitchEnv {
 
     private boolean down;
 
-    private int unit;
+    private final int unit;
 
     PitchEnv(double sampleRate) {
         unit = (int) (Note.N * (1 << 24) / (21.3 * sampleRate) + 0.5);

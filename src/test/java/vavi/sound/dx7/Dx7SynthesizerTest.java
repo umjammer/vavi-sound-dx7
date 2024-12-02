@@ -66,7 +66,7 @@ public class Dx7SynthesizerTest {
         return Files.exists(Paths.get("local.properties"));
     }
 
-    static float volume = Float.parseFloat(System.getProperty("vavi.test.volume.midi",  "0.2"));
+    static final float volume = Float.parseFloat(System.getProperty("vavi.test.volume.midi",  "0.2"));
 
     @BeforeEach
     void setup() throws IOException {
@@ -76,6 +76,7 @@ public class Dx7SynthesizerTest {
     }
 
     @Property(name = "test.midi")
+    final
     String midi = "src/test/resources/test.mid";
 
     @Test
@@ -384,7 +385,7 @@ Debug.println(x.length + "\n" + StringUtil.getDump(x));
         line.close();
     }
 
-    static byte[] sample_buf = new byte[128];
+    static final byte[] sample_buf = new byte[128];
 
     static void writeData(SourceDataLine line, int[] buf, int n) {
         int delta = 0x100;

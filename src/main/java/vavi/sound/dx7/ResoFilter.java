@@ -27,11 +27,11 @@ package vavi.sound.dx7;
  */
 public class ResoFilter {
 
-    private int[] x = new int[4];
-    private int[] w = new int[4];
+    private final int[] x = new int[4];
+    private final int[] w = new int[4];
     private int yy;
 
-    private Context context;
+    private final Context context;
 
     public ResoFilter(Context context) {
         for (int i = 0; i < 4; i++) {

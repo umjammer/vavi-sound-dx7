@@ -16,28 +16,31 @@
 
 package vavi.sound.dx7;
 
-import java.util.logging.Level;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 
-import vavi.util.Debug;
+import static java.lang.System.getLogger;
 
 
 public class Note {
 
+    private static final Logger logger = getLogger(Note.class.getName());
+
     public static final int LG_N = 6;
     public static final int N = 1 << LG_N;
 
-    private FmCore core = new FmCore();
-    private Env[] env = new Env[6];
-    private FmCore.FmOpParams[] params_ = new FmCore.FmOpParams[6];
-    private Context context;
-    private int[] basepitch_ = new int[6];
-    private int[] fb_buf_ = new int[2];
-    private int fbShift;
-    private int algorithm;
-    private int pitchModDepth;
-    private int pitchModSens;
+    private final FmCore core = new FmCore();
+    private final Env[] env = new Env[6];
+    private final FmCore.FmOpParams[] params_ = new FmCore.FmOpParams[6];
+    private final Context context;
+    private final int[] basepitch_ = new int[6];
+    private final int[] fb_buf_ = new int[2];
+    private final int fbShift;
+    private final int algorithm;
+    private final int pitchModDepth;
+    private final int pitchModSens;
 
-    private int midiNoteToLogFreq(int midiNote) {
+    private static int midiNoteToLogFreq(int midiNote) {
         final int base = 50857777; // (1 << 24) * (log(440) / log(2) - 69/12)
         final int step = (1 << 24) / 12;
         return base + step * midiNote;
@@ -49,7 +52,7 @@ public class Note {
         76922906, 77910978, 78860292, 79773775, 80654032, 81503396, 82323963, 83117622
     };
 
-    private int oscFreq(int midiNote, int mode, int coarse, int fine, int detune) {
+    private static int oscFreq(int midiNote, int mode, int coarse, int fine, int detune) {
         // TODO: pitch randomization
         int logFreq;
         if (mode == 0) {
@@ -77,14 +80,14 @@ public class Note {
     };
 
     // See "velocity" section of notes. Returns velocity delta in microsteps.
-    private int scaleVelocity(int velocity, int sensitivity) {
+    private static int scaleVelocity(int velocity, int sensitivity) {
         int clampedVel = Math.max(0, Math.min(127, velocity));
         int velValue = velocityData[clampedVel >> 1] - 239;
         int scaledVel = ((sensitivity * velValue + 7) >> 3) << 4;
         return scaledVel;
     }
 
-    private int scaleRate(int midiNote, int sensitivity) {
+    private static int scaleRate(int midiNote, int sensitivity) {
         int x = Math.min(31, Math.max(0, midiNote / 3 - 7));
         int qrateDelta = (sensitivity * x) >> 3;
 
@@ -103,7 +106,7 @@ public class Note {
         222, 238, 250
     };
 
-    private int scaleCurve(int group, int depth, int curve) {
+    private static int scaleCurve(int group, int depth, int curve) {
         int scale;
         if (curve == 0 || curve == 3) {
             // linear
@@ -120,7 +123,7 @@ public class Note {
         return scale;
     }
 
-    private int scaleLevel(int midiNote, int breakPt, int leftDepth, int rightDepth, int leftCurve, int rightCurve) {
+    private static int scaleLevel(int midiNote, int breakPt, int leftDepth, int rightDepth, int leftCurve, int rightCurve) {
         int offset = midiNote - breakPt - 17;
         if (offset >= 0) {
             return scaleCurve(offset / 3, rightDepth, rightCurve);
@@ -147,7 +150,7 @@ public class Note {
             outLevel = Env.scaleOutLevel(outLevel);
 
             for (int j = 8; j < 12; j++) {
-                Debug.println(Level.FINE, patch[off + j] + " ");
+                logger.log(Level.DEBUG, patch[off + j] + " ");
             }
 
             int scaleLevel = scaleLevel(midiNote,
@@ -159,7 +162,7 @@ public class Note {
             outLevel += scaleLevel;
             outLevel = Math.min(127, outLevel);
 
-            Debug.println(Level.FINE, op + ": " + scaleLevel + " " + outLevel);
+            logger.log(Level.DEBUG, op + ": " + scaleLevel + " " + outLevel);
 
             outLevel = outLevel << 5;
             outLevel += scaleVelocity(velocity, patch[off + 15]);
@@ -193,7 +196,7 @@ public class Note {
     static final int kControllerPitch = 128;
 
     public static class Controllers {
-        public int[] values = new int[129];
+        public final int[] values = new int[129];
         public Controllers(int value) {
             values[kControllerPitch] = value;
         }

@@ -18,7 +18,7 @@ public class Context {
     public FreqLut freqLut;
     public PitchEnv pitchEnv;
 
-    private static Map<Float, Context> instances = new HashMap<>();
+    private static final Map<Float, Context> instances = new HashMap<>();
 
     public static Context getInstance(float sampleRate) {
         if (instances.containsKey(sampleRate)) {

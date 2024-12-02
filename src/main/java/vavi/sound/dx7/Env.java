@@ -19,10 +19,10 @@ package vavi.sound.dx7;
 
 class Env {
 
-    private int[] rates = new int[4];
-    private int[] levels = new int[4];
-    private int outLevel;
-    private int rateScaling;
+    private final int[] rates = new int[4];
+    private final int[] levels = new int[4];
+    private final int outLevel;
+    private final int rateScaling;
     // Level is stored so that 2^24 is one doubling, ie 16 more bits than
     // the DX7 itself (fraction is stored in level rather than separate
     // counter)

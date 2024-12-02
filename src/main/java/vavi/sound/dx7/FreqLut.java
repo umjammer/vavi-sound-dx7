@@ -29,7 +29,7 @@ public class FreqLut {
     private static final int SAMPLE_SHIFT = 24 - LG_N_SAMPLES;
     private static final int MAX_LOGFREQ_INT = 20;
 
-    private int[] lut = new int[N_SAMPLES + 1];
+    private final int[] lut = new int[N_SAMPLES + 1];
 
     FreqLut(double sampleRate) {
         double y = (1L << (24 + MAX_LOGFREQ_INT)) / sampleRate;
