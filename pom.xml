@@ -3,7 +3,7 @@
 
   <groupId>vavi</groupId>
   <artifactId>vavi-sound-dx7</artifactId>
-  <version>0.0.4</version>
+  <version>0.0.5</version>
 
   <properties>
     <vavi.test.volume>0.02</vavi.test.volume>
