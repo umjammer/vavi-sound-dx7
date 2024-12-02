@@ -37,7 +37,6 @@ class SawtoothTest {
     }
 
     @Property(name = "vavi.test.volume")
-    final
     double volume = 0.2;
 
     @BeforeEach
